@@ -16,6 +16,16 @@ import toast from 'react-hot-toast';
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
+  const handleImageError = (e) => {
+
+    e.target.onerror = null;
+
+    e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+
+  };
+
+
+
   return (
 
     <motion.div
@@ -30,15 +40,21 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
     >
 
-      <img
+      <div className="relative w-24 h-24 flex-shrink-0">
 
-        src={item.image}
+        <img
 
-        alt={item.name}
+          src={item.images?.[0] || item.image || 'https://via.placeholder.com/150?text=No+Image'}
 
-        className="w-24 h-24 object-cover rounded"
+          alt={item.name}
 
-      />
+          className="w-24 h-24 object-cover rounded"
+
+          onError={handleImageError}
+
+        />
+
+      </div>
 
       <div className="flex-1 text-center sm:text-left">
 

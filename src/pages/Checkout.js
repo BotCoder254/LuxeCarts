@@ -20,6 +20,8 @@ import { motion } from 'framer-motion';
 
 import toast from 'react-hot-toast';
 
+import { inputStyles } from '../styles/commonStyles';
+
 
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
@@ -250,11 +252,11 @@ const CheckoutForm = () => {
 
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div className="col-span-2">
 
-              <label className="block text-sm font-medium text-gray-700">Full Name</label>
+              <label className={inputStyles.label}>Full Name</label>
 
               <input
 
@@ -268,7 +270,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your full name"
 
               />
 
@@ -276,7 +280,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <label className={inputStyles.label}>Email</label>
 
               <input
 
@@ -290,7 +294,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your email"
 
               />
 
@@ -298,7 +304,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <label className={inputStyles.label}>Phone</label>
 
               <input
 
@@ -312,7 +318,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your phone number"
 
               />
 
@@ -320,11 +328,9 @@ const CheckoutForm = () => {
 
             <div className="col-span-2">
 
-              <label className="block text-sm font-medium text-gray-700">Address</label>
+              <label className={inputStyles.label}>Address</label>
 
-              <input
-
-                type="text"
+              <textarea
 
                 name="address"
 
@@ -334,7 +340,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.textarea}
+
+                placeholder="Enter your street address"
 
               />
 
@@ -342,7 +350,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">City</label>
+              <label className={inputStyles.label}>City</label>
 
               <input
 
@@ -356,7 +364,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your city"
 
               />
 
@@ -364,7 +374,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">State</label>
+              <label className={inputStyles.label}>State</label>
 
               <input
 
@@ -378,7 +388,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your state"
 
               />
 
@@ -386,7 +398,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+              <label className={inputStyles.label}>ZIP Code</label>
 
               <input
 
@@ -400,7 +412,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your ZIP code"
 
               />
 
@@ -408,7 +422,7 @@ const CheckoutForm = () => {
 
             <div>
 
-              <label className="block text-sm font-medium text-gray-700">Country</label>
+              <label className={inputStyles.label}>Country</label>
 
               <input
 
@@ -422,7 +436,9 @@ const CheckoutForm = () => {
 
                 onChange={handleShippingChange}
 
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+
+                placeholder="Enter your country"
 
               />
 
@@ -444,47 +460,87 @@ const CheckoutForm = () => {
 
           </h3>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
 
-            <CardElement
+            <div>
 
-              options={{
+              <label className={inputStyles.label}>Card Number</label>
 
-                style: {
+              <CardElement
 
-                  base: {
+                options={{
 
-                    fontSize: '16px',
+                  style: {
 
-                    color: '#424770',
+                    base: {
 
-                    '::placeholder': {
+                      fontSize: '16px',
 
-                      color: '#aab7c4',
+                      color: '#374151',
+
+                      '::placeholder': {
+
+                        color: '#9CA3AF',
+
+                      },
+
+                      padding: '16px',
+
+                    },
+
+                    invalid: {
+
+                      color: '#EF4444',
 
                     },
 
                   },
 
-                  invalid: {
+                  classes: {
 
-                    color: '#9e2146',
+                    base: inputStyles.base,
 
                   },
 
-                },
+                }}
 
-              }}
+              />
 
-              className="p-3 border rounded-md"
+            </div>
 
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div className="flex items-center text-sm text-gray-500">
+              <div>
 
-              <FiLock className="mr-2" />
+                <label className={inputStyles.label}>Expiration Date</label>
 
-              Your payment information is secure and encrypted
+                <input
+
+                  type="text"
+
+                  placeholder="MM/YY"
+
+                  className={inputStyles.base}
+
+                />
+
+              </div>
+
+              <div>
+
+                <label className={inputStyles.label}>CVC</label>
+
+                <input
+
+                  type="text"
+
+                  placeholder="CVC"
+
+                  className={inputStyles.base}
+
+                />
+
+              </div>
 
             </div>
 

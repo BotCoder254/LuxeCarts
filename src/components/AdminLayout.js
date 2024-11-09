@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -18,7 +18,7 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/products', icon: <FiBox className="w-6 h-6" />, label: 'Products' },
     { path: '/admin/orders', icon: <FiShoppingBag className="w-6 h-6" />, label: 'Orders' },
     { path: '/admin/users', icon: <FiUsers className="w-6 h-6" />, label: 'Users' },
-    { path: '/admin/settings', icon: <FiSettings className="w-6 h-6" />, label: 'Settings' },
+    { path: '/admin/profile', icon: <FiUser className="w-6 h-6" />, label: 'Profile' },
   ];
 
   useEffect(() => {
@@ -33,28 +33,17 @@ const AdminLayout = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
     if (isMobile) {
       setIsSidebarOpen(false);
     }
   }, [location, isMobile]);
 
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutUser()).unwrap();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Failed to logout');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white shadow-md fixed top-0 left-0 right-0 z-20">
-        <div className="flex items-center justify-between p-4">
+      <div className="lg:hidden bg-white shadow-md fixed top-0 left-0 right-0 z-20 h-16">
+        <div className="flex items-center justify-between px-4 h-full">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -67,19 +56,6 @@ const AdminLayout = ({ children }) => {
         </div>
       </div>
 
-      {/* Backdrop */}
-      <AnimatePresence>
-        {isSidebarOpen && isMobile && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
       {/* Sidebar */}
       <aside
         className={`${
@@ -87,7 +63,7 @@ const AdminLayout = ({ children }) => {
             ? `fixed inset-y-0 left-0 z-40 w-64 transform ${
                 isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`
-            : 'hidden lg:block fixed inset-y-0 left-0 w-64'
+            : 'fixed inset-y-0 left-0 w-64'
         } bg-white shadow-lg transition-transform duration-300 ease-in-out`}
       >
         <div className="flex flex-col h-full">
@@ -117,8 +93,18 @@ const AdminLayout = ({ children }) => {
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t">
+            <Link
+              to="/"
+              className="flex items-center text-sm font-medium text-gray-600 hover:text-indigo-600 mb-4"
+            >
+              <FiShoppingBag className="mr-2" />
+              View Store
+            </Link>
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                dispatch(logoutUser());
+                navigate('/login');
+              }}
               className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
             >
               <FiLogOut className="mr-3 w-5 h-5" />
@@ -128,16 +114,22 @@ const AdminLayout = ({ children }) => {
         </div>
       </aside>
 
+      {/* Backdrop */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
       <main
         className={`transition-all duration-300 ease-in-out ${
-          isMobile ? 'lg:ml-64' : 'ml-0 lg:ml-64'
-        }`}
+          isMobile ? 'pt-16' : ''
+        } lg:ml-64`}
       >
-        <div className="min-h-screen pt-16 lg:pt-0">
-          <div className="p-4 sm:p-6 lg:p-8">
-            {children}
-          </div>
+        <div className="p-4 sm:p-6 lg:p-8">
+          {children}
         </div>
       </main>
     </div>

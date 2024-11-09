@@ -6,6 +6,7 @@ import { db, storage } from '../../firebase/config';
 import { FiArrowLeft, FiUpload, FiX, FiPlus } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { inputStyles } from '../../styles/commonStyles';
 
 const EditProduct = () => {
   const navigate = useNavigate();
@@ -249,43 +250,46 @@ const EditProduct = () => {
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Product Name</label>
+              <label className={inputStyles.label}>Product Name</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+                placeholder="Enter product name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">SKU</label>
+              <label className={inputStyles.label}>SKU</label>
               <input
                 type="text"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+                placeholder="Enter SKU"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Brand</label>
+              <label className={inputStyles.label}>Brand</label>
               <input
                 type="text"
                 value={formData.brand}
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+                placeholder="Enter brand name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
+              <label className={inputStyles.label}>Category</label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.select}
               >
                 <option value="">Select Category</option>
                 {categories.map((category) => (
@@ -297,11 +301,11 @@ const EditProduct = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <label className={inputStyles.label}>Status</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.select}
               >
                 {statuses.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -312,77 +316,43 @@ const EditProduct = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Condition</label>
-              <select
-                value={formData.condition}
-                onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              >
-                {conditions.map((condition) => (
-                  <option key={condition.value} value={condition.value}>
-                    {condition.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Price</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
+              <label className={inputStyles.label}>Price</label>
+              <div className="relative">
+                <span className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
                   step="0.01"
                   required
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="pl-10 w-full px-6 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="0.00"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Compare at Price</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.compareAtPrice}
-                  onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
-                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Stock</label>
+              <label className={inputStyles.label}>Stock</label>
               <input
                 type="number"
                 required
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputStyles.base}
+                placeholder="Enter stock quantity"
               />
             </div>
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              rows={4}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
+            <div className="col-span-2">
+              <label className={inputStyles.label}>Description</label>
+              <textarea
+                rows={6}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={inputStyles.textarea}
+                placeholder="Enter product description"
+              />
+            </div>
           </div>
 
           {/* Images */}
@@ -428,15 +398,15 @@ const EditProduct = () => {
           </div>
 
           {/* Features */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Product Features</label>
+          <div className="col-span-2">
+            <label className={inputStyles.label}>Product Features</label>
             {formData.features.map((feature, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input
                   type="text"
                   value={feature}
                   onChange={(e) => handleFeatureChange(index, e.target.value)}
-                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className={inputStyles.base}
                   placeholder="Enter a feature"
                 />
                 <button
@@ -444,16 +414,16 @@ const EditProduct = () => {
                   onClick={() => removeFeature(index)}
                   className="p-2 text-red-600 hover:text-red-800"
                 >
-                  <FiX />
+                  <FiX className="w-5 h-5" />
                 </button>
               </div>
             ))}
             <button
               type="button"
               onClick={addFeature}
-              className="mt-2 flex items-center text-sm text-indigo-600 hover:text-indigo-800"
+              className={inputStyles.button.secondary}
             >
-              <FiPlus className="mr-1" /> Add Feature
+              <FiPlus className="mr-2" /> Add Feature
             </button>
           </div>
 

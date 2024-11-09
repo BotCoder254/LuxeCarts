@@ -49,6 +49,7 @@ const Navbar = () => {
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
       setSearchQuery('');
+      setIsMenuOpen(false); // Close mobile menu after search
     }
   };
 
@@ -60,6 +61,11 @@ const Navbar = () => {
     'Sports',
     'Books',
   ];
+
+  // Don't show navbar on admin routes
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <header
@@ -334,6 +340,35 @@ const Navbar = () => {
                     >
                       Register
                     </Link>
+                  </>
+                )}
+
+                {user && (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      to="/orders"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Orders
+                    </Link>
+                    <Link
+                      to="/favorites"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Favorites
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50"
+                    >
+                      Logout
+                    </button>
                   </>
                 )}
               </div>

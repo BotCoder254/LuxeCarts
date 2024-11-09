@@ -29,6 +29,7 @@ import { db } from './firebase/config';
 import { refreshProducts } from './store/slices/productSlice';
 import ErrorBoundary from './components/ErrorBoundary';
 import Favorites from './pages/Favorites';
+import UserProfile from './pages/UserProfile';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -151,6 +152,7 @@ function App() {
                     <Route path="products/edit/:id" element={<EditProduct />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="users" element={<AdminUsers />} />
+                    <Route path="profile" element={<UserProfile isAdmin={true} />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
@@ -163,6 +165,16 @@ function App() {
             element={
               <PrivateRoute>
                 <Favorites />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Regular User Profile Route */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <UserProfile />
               </PrivateRoute>
             }
           />
