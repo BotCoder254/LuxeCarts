@@ -1,0 +1,74 @@
+# Clear existing setup
+
+
+
+rm -rf node_modules
+
+
+
+rm package-lock.json
+
+
+
+
+
+
+
+# Install dependencies
+
+
+
+npm install @reduxjs/toolkit react-redux firebase @stripe/stripe-js @stripe/react-stripe-js
+
+
+
+npm install react-router-dom react-icons react-hot-toast moment react-loader-spinner axios
+
+
+
+npm install framer-motion@10.16.4
+
+
+
+npm install -D tailwindcss postcss autoprefixer
+
+
+
+npm install -D @tailwindcss/forms @tailwindcss/aspect-ratio
+
+
+
+
+
+
+
+# Initialize Tailwind CSS
+
+
+
+npx tailwindcss init -p
+
+
+
+
+
+
+
+
+#firebase  stripe deploy:
+
+
+cd functions 
+npm install stripe cors
+
+
+firebase functions:config:set stripe.secret_key="your_stripe_secret_key"
+firebase functions:config:set stripe.webhook_secret="your_stripe_webhook_secret" 
+
+
+firebase deploy --only functions 
+
+
+
+
+
