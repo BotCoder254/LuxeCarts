@@ -61,6 +61,7 @@ Your premier destination for luxury shopping. Discover premium products with exc
 - State Management (Redux/Context)
 - Styling Solution (CSS Modules/Styled Components)
 - Testing Framework (Jest/React Testing Library)
+- stripe (payment and mpesa )
 
 ## 📱 Responsive Design
 
