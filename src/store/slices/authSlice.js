@@ -58,8 +58,12 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk('auth/logout', async () => {
+export const logoutUser = createAsyncThunk('auth/logout', async (_, { dispatch }) => {
   await signOut(auth);
+  // Clear other slices
+  dispatch({ type: 'cart/clearCart' });
+  dispatch({ type: 'favorites/clearFavorites' });
+  dispatch({ type: 'products/refreshProducts' });
 });
 
 export const googleAuth = createAsyncThunk(

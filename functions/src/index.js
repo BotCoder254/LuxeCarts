@@ -2,7 +2,9 @@ const functions = require('firebase-functions');
 
 const admin = require('firebase-admin');
 
-const stripe = require('stripe')(functions.config().stripe.secret_key);
+const stripe = require('stripe')('sk_test_51JMihKFmxId2hxxFTAnAHR0RmO7tmiaMbHzl3QcnVIjx2GkHVG1n7lvDNFARVXPqiTg9YhJnQbHCc9YAlwODrGjJ00814iNd6B', {
+  apiVersion: '2023-10-16'
+});
 
 
 
@@ -18,7 +20,13 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
     if (!context.auth) {
 
-      throw new Error('Authentication required!');
+      throw new functions.https.HttpsError(
+
+        'unauthenticated',
+
+        'You must be logged in to make a payment'
+
+      );
 
     }
 
@@ -28,7 +36,23 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
 
 
-    // Create payment intent
+    // Validate amount
+
+    if (!amount || amount <= 0) {
+
+      throw new functions.https.HttpsError(
+
+        'invalid-argument',
+
+        'Invalid payment amount'
+
+      );
+
+    }
+
+
+
+    // Create payment intent with explicit payment method types
 
     const paymentIntent = await stripe.paymentIntents.create({
 
@@ -38,6 +62,8 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
       receipt_email: customer_email,
 
+      payment_method_types: ['card'],
+
       metadata: {
 
         userId: context.auth.uid,
@@ -45,6 +71,20 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
       },
 
     });
+
+
+
+    if (!paymentIntent || !paymentIntent.client_secret) {
+
+      throw new functions.https.HttpsError(
+
+        'internal',
+
+        'Failed to create payment intent'
+
+      );
+
+    }
 
 
 
@@ -58,7 +98,43 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
     console.error('Error creating payment intent:', error);
 
-    throw new functions.https.HttpsError('internal', error.message);
+    if (error instanceof functions.https.HttpsError) {
+
+      throw error;
+
+    }
+
+    if (error.type === 'StripeCardError') {
+
+      throw new functions.https.HttpsError(
+
+        'failed-precondition',
+
+        error.message || 'Your card was declined'
+
+      );
+
+    }
+
+    if (error.type === 'StripeInvalidRequestError') {
+
+      throw new functions.https.HttpsError(
+
+        'invalid-argument',
+
+        'Invalid payment information provided'
+
+      );
+
+    }
+
+    throw new functions.https.HttpsError(
+
+      'unknown',
+
+      'An unexpected error occurred while processing your payment. Please try again.'
+
+    );
 
   }
 

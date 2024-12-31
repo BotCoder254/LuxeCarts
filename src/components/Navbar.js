@@ -37,6 +37,8 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
+      setIsProfileOpen(false);
+      setIsMenuOpen(false);
       toast.success('Logged out successfully');
       navigate('/');
     } catch (error) {

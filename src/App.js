@@ -2,7 +2,11 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
-import { selectIsAdmin } from './store/slices/authSlice';
+import { selectIsAdmin, setUser } from './store/slices/authSlice';
+import { collection, onSnapshot, query, where, doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from './firebase/config';
+import { refreshProducts } from './store/slices/productSlice';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -24,9 +28,6 @@ import AdminLayout from './components/AdminLayout';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import ForgotPassword from './pages/ForgotPassword';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from './firebase/config';
-import { refreshProducts } from './store/slices/productSlice';
 import ErrorBoundary from './components/ErrorBoundary';
 import Favorites from './pages/Favorites';
 import UserProfile from './pages/UserProfile';
@@ -37,6 +38,23 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Set up Firebase auth state listener
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Get additional user data from Firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          dispatch(setUser({ uid: firebaseUser.uid, ...userDoc.data() }));
+        }
+      } else {
+        dispatch(setUser(null));
+      }
+    });
+
+    return () => unsubscribeAuth(); // Cleanup subscription
+  }, [dispatch]);
 
   useEffect(() => {
     // Redirect authenticated users from public routes

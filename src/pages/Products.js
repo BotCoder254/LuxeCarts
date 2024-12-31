@@ -27,8 +27,7 @@ const Products = () => {
   useEffect(() => {
     const q = query(
       collection(db, 'products'),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc')
+      where('status', '==', 'active')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
