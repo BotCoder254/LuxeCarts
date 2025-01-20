@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { clearCart } from '../store/slices/cartSlice';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, functions } from '../firebase/config';
-import { httpsCallable } from 'firebase/functions';
-import { FiCreditCard, FiShoppingBag, FiTruck, FiLock } from 'react-icons/fi';
+import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { FiShoppingBag, FiTruck, FiLock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { inputStyles } from '../styles/commonStyles';
-import { stripePromise, CARD_ELEMENT_OPTIONS, handleStripeError } from '../config/stripe';
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
 
 const CheckoutForm = () => {
-  const stripe = useStripe();
-  const elements = useElements();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items, total } = useSelector((state) => state.cart);
@@ -33,6 +28,12 @@ const CheckoutForm = () => {
     zipCode: '',
     country: '',
   });
+  const [checkoutRequestID, setCheckoutRequestID] = useState('');
+  const [showPaymentStatus, setShowPaymentStatus] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState('');
+  const [error, setError] = useState('');
+  const [pollingInterval, setPollingInterval] = useState(null);
+  const [orderRef, setOrderRef] = useState(null);
 
   const finalTotal = total >= FREE_SHIPPING_THRESHOLD ? total : total + SHIPPING_COST;
 
@@ -44,12 +45,86 @@ const CheckoutForm = () => {
     }));
   };
 
+  const handlePayment = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/stkpush', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          phoneNumber: shippingDetails.phone,
+          amount: Math.round(finalTotal)
+        })
+      });
+
+      const responseClone = response.clone();
+      let data;
+      
+      try {
+        data = await response.json();
+      } catch (error) {
+        const textData = await responseClone.text();
+        console.error('Failed to parse JSON:', textData);
+        throw new Error('Invalid response from server');
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Payment failed');
+      }
+
+      if (data.ResponseCode === "0") {
+        // Payment initiated successfully
+        toast.loading('Processing payment...', { duration: 15000 });
+        
+        // Wait for 15 seconds then check payment status
+        setTimeout(async () => {
+          try {
+            const statusResponse = await fetch(`http://localhost:5000/payment-status/${data.CheckoutRequestID}`);
+            const statusData = await statusResponse.json();
+
+            if (statusData.ResultCode === "0") {
+              // Payment successful
+              const orderRef = await addDoc(collection(db, 'orders'), {
+                userId: user.uid,
+                items,
+                total: finalTotal,
+                shippingDetails: shippingDetails,
+                paymentStatus: 'completed',
+                status: 'processing',
+                checkoutRequestId: data.CheckoutRequestID,
+                createdAt: serverTimestamp()
+              });
+
+              // Clear cart after successful order
+              dispatch(clearCart());
+              
+              toast.success('Payment successful! Order placed.');
+              navigate(`/order/${orderRef.id}`);
+            } else if (statusData.ResultCode === "1032") {
+              // Cancelled by user
+              toast.error('Payment cancelled by user');
+            } else {
+              // Other payment failure
+              toast.error(statusData.ResultDesc || 'Payment failed');
+            }
+          } catch (error) {
+            console.error('Error checking payment status:', error);
+            toast.error('Failed to verify payment status');
+          }
+        }, 15000);
+      } else {
+        throw new Error(data.ResponseDescription || 'Failed to initiate payment');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error(error.message || 'Payment failed. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements) {
-      toast.error('Stripe is not initialized. Please try again.');
-      return;
-    }
 
     // Validate form fields
     if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
@@ -60,77 +135,124 @@ const CheckoutForm = () => {
     }
 
     setLoading(true);
+    setError('');
 
     try {
-      // Create payment intent using Firebase Cloud Function
-      const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
-      let clientSecret;
-      try {
-        const result = await createPaymentIntent({
-          amount: Math.round(finalTotal * 100), // Convert to cents
-          currency: 'usd',
-          customer_email: shippingDetails.email,
-        });
-        
-        if (!result.data || !result.data.clientSecret) {
-          throw new Error('Invalid response from payment service');
-        }
-        
-        clientSecret = result.data.clientSecret;
-      } catch (error) {
-        console.error('Payment intent creation error:', error);
-        throw new Error(error.message || 'Failed to initialize payment. Please check your payment details and try again.');
-      }
-
-      // Confirm payment
-      const paymentResult = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: shippingDetails.name,
-            email: shippingDetails.email,
-            phone: shippingDetails.phone,
-            address: {
-              line1: shippingDetails.address,
-              city: shippingDetails.city,
-              state: shippingDetails.state,
-              postal_code: shippingDetails.zipCode,
-              country: shippingDetails.country,
-            },
-          },
-        },
-      });
-
-      if (paymentResult.error) {
-        throw paymentResult.error;
-      }
-
-      // Create order in Firestore
-      const orderRef = await addDoc(collection(db, 'orders'), {
-        userId: user.uid,
-        items,
-        total: finalTotal,
-        shippingDetails,
-        paymentIntentId: paymentResult.paymentIntent.id,
-        status: 'processing',
-        createdAt: serverTimestamp(),
-      });
-
-      dispatch(clearCart());
-      navigate('/order-success', {
-        state: {
-          orderId: orderRef.id,
-          total: finalTotal,
-        },
-      });
-      toast.success('Order placed successfully!');
-
+      // Initiate payment first
+      await handlePayment();
+      
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error(handleStripeError(error));
+      toast.error(error.message || 'An error occurred during checkout. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const startPolling = async (checkoutRequestID) => {
+    // Clear any existing interval
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+
+    // Set up new polling interval
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch("http://localhost:8000/query", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            queryCode: checkoutRequestID
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Status check failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Payment status response:', data);
+
+        // Handle successful response
+        if (data.ResponseCode === "0" && orderRef) {
+          // Payment successful
+          setPaymentStatus('Payment successful!');
+          clearInterval(interval);
+          setPollingInterval(null);
+
+          // Update order status
+          await updateDoc(orderRef, {
+            status: 'processing',
+            paymentStatus: 'completed',
+            updatedAt: serverTimestamp(),
+            isVisible: true // Make visible to admin
+          });
+          
+          // Clear cart and navigate
+          dispatch(clearCart());
+          navigate('/order-success', {
+            state: {
+              orderId: orderRef.id,
+              total: finalTotal,
+            }
+          });
+          toast.success('Payment successful! Order placed.');
+        } else if (data.ResponseCode === "2" || data.isProcessing) {
+          // Payment is still processing
+          setPaymentStatus('Payment processing... Please wait.');
+        } else if (data.ResponseCode === "3" || data.isCanceled) {
+          // Payment was canceled
+          clearInterval(interval);
+          setPollingInterval(null);
+          
+          // Update order status
+          await updateDoc(orderRef, {
+            status: 'canceled',
+            paymentStatus: 'canceled',
+            error: data.ResultDesc || data.errorMessage,
+            updatedAt: serverTimestamp(),
+            isVisible: false // Hide from admin until payment is successful
+          });
+
+          setPaymentStatus('Payment canceled');
+          toast.error('Transaction was canceled. Please try again.');
+          throw new Error('Transaction was canceled');
+        } else if (data.ResponseCode === "1" && orderRef) {
+          // Payment failed
+          clearInterval(interval);
+          setPollingInterval(null);
+          
+          // Update order status
+          await updateDoc(orderRef, {
+            status: 'payment_failed',
+            paymentStatus: 'failed',
+            error: data.ResultDesc || data.errorMessage,
+            updatedAt: serverTimestamp(),
+            isVisible: false // Hide from admin until payment is successful
+          });
+
+          setPaymentStatus('Payment failed');
+          toast.error(data.ResultDesc || data.errorMessage || 'Payment failed');
+          throw new Error(data.ResultDesc || data.errorMessage || 'Payment failed');
+        }
+      } catch (error) {
+        console.error('Status check error:', error);
+        setError(error.message || 'Failed to check payment status. Please try again.');
+        
+        // Only clear interval if it's a fatal error (not processing)
+        if (!error.message.includes('processing')) {
+          clearInterval(interval);
+          setPollingInterval(null);
+          toast.error(error.message || 'Failed to check payment status');
+        }
+      }
+    }, 5000);
+
+    setPollingInterval(interval);
   };
 
   return (
@@ -167,7 +289,7 @@ const CheckoutForm = () => {
               />
             </div>
             <div>
-              <label className={inputStyles.label}>Phone</label>
+              <label className={inputStyles.label}>Phone (M-Pesa)</label>
               <input
                 type="tel"
                 name="phone"
@@ -175,8 +297,11 @@ const CheckoutForm = () => {
                 value={shippingDetails.phone}
                 onChange={handleShippingChange}
                 className={inputStyles.base}
-                placeholder="Enter your phone number"
+                placeholder="254XXXXXXXXX"
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Enter your M-Pesa number starting with 254
+              </p>
             </div>
             <div className="col-span-2">
               <label className={inputStyles.label}>Address</label>
@@ -243,16 +368,15 @@ const CheckoutForm = () => {
         {/* Payment Section */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <FiCreditCard className="mr-2" /> Payment Information
+            <FiLock className="mr-2" /> Payment Information
           </h3>
-          <div className="space-y-6">
-            <div>
-              <label className={inputStyles.label}>Card Details</label>
-              <div className="mt-1">
-                <CardElement options={CARD_ELEMENT_OPTIONS} />
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                For testing, use card number: 4242 4242 4242 4242
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Payment will be processed via M-Pesa. You will receive a prompt on your phone to complete the payment.
+            </p>
+            <div className="bg-green-50 p-4 rounded-md">
+              <p className="text-sm text-green-700">
+                Make sure your M-Pesa number {shippingDetails.phone} is correct and has sufficient funds.
               </p>
             </div>
           </div>
@@ -301,10 +425,10 @@ const CheckoutForm = () => {
 
         <button
           type="submit"
-          disabled={!stripe || loading}
-          className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={loading}
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Processing...' : `Pay $${finalTotal.toFixed(2)}`}
+          {loading ? 'Processing...' : `Pay KES ${finalTotal.toFixed(2)} with M-Pesa`}
         </button>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -312,7 +436,7 @@ const CheckoutForm = () => {
             <FiLock className="mr-2" /> Secure Checkout
           </h4>
           <p className="text-sm text-gray-600">
-            Your payment information is processed securely. We do not store credit card details.
+            Your payment will be processed securely through M-Pesa. You will receive a prompt on your phone to complete the transaction.
           </p>
         </div>
       </div>
@@ -329,9 +453,7 @@ const Checkout = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl font-bold mb-8">Checkout</h1>
-        <Elements stripe={stripePromise}>
-          <CheckoutForm />
-        </Elements>
+        <CheckoutForm />
       </motion.div>
     </div>
   );

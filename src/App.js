@@ -31,6 +31,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ErrorBoundary from './components/ErrorBoundary';
 import Favorites from './pages/Favorites';
 import UserProfile from './pages/UserProfile';
+import AdminOrderDetails from './pages/AdminOrderDetails';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -169,6 +170,7 @@ function App() {
                     <Route path="products/new" element={<AdminNewProduct />} />
                     <Route path="products/edit/:id" element={<EditProduct />} />
                     <Route path="orders" element={<AdminOrders />} />
+                    <Route path="orders/:orderId" element={<AdminOrderDetails />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="profile" element={<UserProfile isAdmin={true} />} />
                   </Routes>

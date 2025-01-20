@@ -273,6 +273,20 @@ const Navbar = () => {
                 <FiMenu className="h-6 w-6" />
               )}
             </button>
+
+            {/* Admin links */}
+            {user?.isAdmin && (
+              <div className="hidden md:flex items-center space-x-4">
+                <Link
+                  to="/admin/orders"
+                  className="text-gray-600 hover:text-gray-900 flex items-center"
+                >
+                  <FiShoppingBag className="mr-1" />
+                  Orders
+                </Link>
+                {/* Other admin links */}
+              </div>
+            )}
           </div>
         </div>
 
