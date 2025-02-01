@@ -78,7 +78,7 @@ const CheckoutForm = () => {
       setOrderRef(orderDocRef);
 
       // Then initiate payment using the local reference
-      const response = await fetch('http://localhost:8000/stkpush', {
+      const response = await fetch('https://luxecarts-mpesa.onrender.com/stkpush', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ const CheckoutForm = () => {
     // Set up new polling interval
     const interval = setInterval(async () => {
       try {
-        const response = await fetch("http://localhost:8000/query", {
+        const response = await fetch("https://luxecarts-mpesa.onrender.com/query", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
