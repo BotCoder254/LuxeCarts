@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { clearCart } from '../store/slices/cartSlice';
-import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FiShoppingBag, FiTruck, FiLock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -45,17 +45,50 @@ const CheckoutForm = () => {
     }));
   };
 
-  const handlePayment = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate form fields
+    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
+        !shippingDetails.address || !shippingDetails.city || !shippingDetails.state || 
+        !shippingDetails.zipCode || !shippingDetails.country) {
+      toast.error('Please fill in all shipping details.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    let newOrderRef = null;
+
     try {
-      const response = await fetch('http://localhost:5000/stkpush', {
+      // Create order first with pending status
+      const orderDocRef = await addDoc(collection(db, 'orders'), {
+        userId: user.uid,
+        items,
+        total: finalTotal,
+        shippingDetails,
+        paymentStatus: 'pending',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        isVisible: false // Hide from admin until payment is successful
+      });
+
+      newOrderRef = orderDocRef;
+      setOrderRef(orderDocRef);
+
+      // Then initiate payment using the local reference
+      const response = await fetch('http://localhost:8000/stkpush', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
-          phoneNumber: shippingDetails.phone,
-          amount: Math.round(finalTotal)
+          phone: shippingDetails.phone,
+          amount: Math.round(finalTotal),
+          orderId: orderDocRef.id
         })
       });
 
@@ -77,79 +110,34 @@ const CheckoutForm = () => {
       if (data.ResponseCode === "0") {
         // Payment initiated successfully
         toast.loading('Processing payment...', { duration: 15000 });
+        setCheckoutRequestID(data.CheckoutRequestID);
+        setShowPaymentStatus(true);
         
-        // Wait for 15 seconds then check payment status
-        setTimeout(async () => {
-          try {
-            const statusResponse = await fetch(`http://localhost:5000/payment-status/${data.CheckoutRequestID}`);
-            const statusData = await statusResponse.json();
-
-            if (statusData.ResultCode === "0") {
-              // Payment successful
-              const orderRef = await addDoc(collection(db, 'orders'), {
-                userId: user.uid,
-                items,
-                total: finalTotal,
-                shippingDetails: shippingDetails,
-                paymentStatus: 'completed',
-                status: 'processing',
-                checkoutRequestId: data.CheckoutRequestID,
-                createdAt: serverTimestamp()
-              });
-
-              // Clear cart after successful order
-              dispatch(clearCart());
-              
-              toast.success('Payment successful! Order placed.');
-              navigate(`/order/${orderRef.id}`);
-            } else if (statusData.ResultCode === "1032") {
-              // Cancelled by user
-              toast.error('Payment cancelled by user');
-            } else {
-              // Other payment failure
-              toast.error(statusData.ResultDesc || 'Payment failed');
-            }
-          } catch (error) {
-            console.error('Error checking payment status:', error);
-            toast.error('Failed to verify payment status');
-          }
-        }, 15000);
+        // Start polling for payment status with the local reference
+        startPolling(data.CheckoutRequestID, orderDocRef);
       } else {
         throw new Error(data.ResponseDescription || 'Failed to initiate payment');
       }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast.error(error.message || 'Payment failed. Please try again.');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate form fields
-    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
-        !shippingDetails.address || !shippingDetails.city || !shippingDetails.state || 
-        !shippingDetails.zipCode || !shippingDetails.country) {
-      toast.error('Please fill in all shipping details.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      // Initiate payment first
-      await handlePayment();
       
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error(error.message || 'An error occurred during checkout. Please try again.');
+      
+      // Update order status if payment failed
+      if (newOrderRef) {
+        await updateDoc(newOrderRef, {
+          status: 'payment_failed',
+          paymentStatus: 'failed',
+          error: error.message,
+          updatedAt: serverTimestamp()
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const startPolling = async (checkoutRequestID) => {
+  const startPolling = async (checkoutRequestID, docRef) => {
     // Clear any existing interval
     if (pollingInterval) {
       clearInterval(pollingInterval);
@@ -177,63 +165,86 @@ const CheckoutForm = () => {
         const data = await response.json();
         console.log('Payment status response:', data);
 
+        const orderDocRef = doc(db, 'orders', docRef.id);
+
         // Handle successful response
-        if (data.ResponseCode === "0" && orderRef) {
+        if (data.isSuccessful) {
           // Payment successful
           setPaymentStatus('Payment successful!');
           clearInterval(interval);
           setPollingInterval(null);
 
           // Update order status
-          await updateDoc(orderRef, {
-            status: 'processing',
-            paymentStatus: 'completed',
-            updatedAt: serverTimestamp(),
-            isVisible: true // Make visible to admin
-          });
+          try {
+            await updateDoc(orderDocRef, {
+              status: 'processing',
+              paymentStatus: 'completed',
+              updatedAt: serverTimestamp(),
+              isVisible: true // Make visible to admin
+            });
+          } catch (updateError) {
+            console.error('Error updating order:', updateError);
+          }
           
           // Clear cart and navigate
           dispatch(clearCart());
           navigate('/order-success', {
             state: {
-              orderId: orderRef.id,
+              orderId: docRef.id,
               total: finalTotal,
             }
           });
           toast.success('Payment successful! Order placed.');
-        } else if (data.ResponseCode === "2" || data.isProcessing) {
+        } else if (data.isProcessing) {
           // Payment is still processing
           setPaymentStatus('Payment processing... Please wait.');
-        } else if (data.ResponseCode === "3" || data.isCanceled) {
+          try {
+            await updateDoc(orderDocRef, {
+              status: 'processing',
+              paymentStatus: 'processing',
+              updatedAt: serverTimestamp()
+            });
+          } catch (updateError) {
+            console.error('Error updating order status:', updateError);
+          }
+        } else if (data.isCanceled) {
           // Payment was canceled
           clearInterval(interval);
           setPollingInterval(null);
           
           // Update order status
-          await updateDoc(orderRef, {
-            status: 'canceled',
-            paymentStatus: 'canceled',
-            error: data.ResultDesc || data.errorMessage,
-            updatedAt: serverTimestamp(),
-            isVisible: false // Hide from admin until payment is successful
-          });
+          try {
+            await updateDoc(orderDocRef, {
+              status: 'canceled',
+              paymentStatus: 'canceled',
+              error: data.ResultDesc || data.errorMessage,
+              updatedAt: serverTimestamp(),
+              isVisible: false // Hide from admin until payment is successful
+            });
+          } catch (updateError) {
+            console.error('Error updating order status:', updateError);
+          }
 
           setPaymentStatus('Payment canceled');
           toast.error('Transaction was canceled. Please try again.');
           throw new Error('Transaction was canceled');
-        } else if (data.ResponseCode === "1" && orderRef) {
+        } else {
           // Payment failed
           clearInterval(interval);
           setPollingInterval(null);
           
           // Update order status
-          await updateDoc(orderRef, {
-            status: 'payment_failed',
-            paymentStatus: 'failed',
-            error: data.ResultDesc || data.errorMessage,
-            updatedAt: serverTimestamp(),
-            isVisible: false // Hide from admin until payment is successful
-          });
+          try {
+            await updateDoc(orderDocRef, {
+              status: 'payment_failed',
+              paymentStatus: 'failed',
+              error: data.ResultDesc || data.errorMessage,
+              updatedAt: serverTimestamp(),
+              isVisible: false // Hide from admin until payment is successful
+            });
+          } catch (updateError) {
+            console.error('Error updating order status:', updateError);
+          }
 
           setPaymentStatus('Payment failed');
           toast.error(data.ResultDesc || data.errorMessage || 'Payment failed');
@@ -250,7 +261,7 @@ const CheckoutForm = () => {
           toast.error(error.message || 'Failed to check payment status');
         }
       }
-    }, 5000);
+    }, 5000); // Poll every 5 seconds
 
     setPollingInterval(interval);
   };
