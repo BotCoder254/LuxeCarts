@@ -25,6 +25,16 @@ const features = [
     title: '24/7 Support',
     description: 'Round-the-clock customer assistance',
   },
+  {
+    icon: <FiShield />,
+    title: 'Money-Back Guarantee',
+    description: '30-day return policy for your peace of mind',
+  },
+  {
+    icon: <FiShoppingBag />,
+    title: 'Exclusive Deals',
+    description: 'Special offers and discounts for members',
+  },
 ];
 
 const categories = [
@@ -32,17 +42,38 @@ const categories = [
     name: 'Electronics',
     image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3',
     link: '/products?category=electronics',
+    description: 'Latest gadgets and tech accessories'
   },
   {
     name: 'Fashion',
     image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3',
     link: '/products?category=fashion',
+    description: 'Trendy clothing and accessories'
   },
   {
     name: 'Home & Living',
     image: 'https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3',
     link: '/products?category=home',
+    description: 'Beautiful home decor and furniture'
   },
+  {
+    name: 'Beauty',
+    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3',
+    link: '/products?category=beauty',
+    description: 'Premium beauty and skincare'
+  },
+  {
+    name: 'Sports',
+    image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3',
+    link: '/products?category=sports',
+    description: 'Sports equipment and activewear'
+  },
+  {
+    name: 'Jewelry',
+    image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3',
+    link: '/products?category=jewelry',
+    description: 'Fine jewelry and watches'
+  }
 ];
 
 const testimonials = [
@@ -51,18 +82,34 @@ const testimonials = [
     role: 'Verified Buyer',
     image: 'https://randomuser.me/api/portraits/women/1.jpg',
     content: "Amazing quality products and excellent customer service. Will definitely shop here again!",
+    rating: 5
   },
   {
     name: 'Michael Chen',
     role: 'Regular Customer',
     image: 'https://randomuser.me/api/portraits/men/2.jpg',
     content: "The best online shopping experience I've had. Fast delivery and great prices.",
+    rating: 5
   },
+  {
+    name: 'Emma Wilson',
+    role: 'Premium Member',
+    image: 'https://randomuser.me/api/portraits/women/3.jpg',
+    content: "LuxeCart's premium selection is unmatched. The quality of products exceeds expectations.",
+    rating: 5
+  },
+  {
+    name: 'David Thompson',
+    role: 'Fashion Enthusiast',
+    image: 'https://randomuser.me/api/portraits/men/4.jpg',
+    content: "Found amazing designer pieces at great prices. The customer service is exceptional!",
+    rating: 5
+  }
 ];
 
 const Home = () => {
   return (
-    <div className="bg-white">
+    <div className="bg-white min-h-screen">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-indigo-900 to-blue-900 h-[85vh]">
         <div className="absolute inset-0">
@@ -105,10 +152,12 @@ const Home = () => {
       </div>
 
       {/* Featured Products Section */}
-      <FeaturedProducts />
+      <div className="py-16">
+        <FeaturedProducts />
+      </div>
 
       {/* Features Section */}
-      <div className="py-24 bg-gray-50">
+      <div className="py-24 bg-gray-50 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -126,7 +175,7 @@ const Home = () => {
           </motion.div>
 
           <div className="mt-20">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {features.map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -153,7 +202,7 @@ const Home = () => {
       </div>
 
       {/* Categories Section */}
-      <div className="py-24 bg-white">
+      <div className="py-24 bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -167,7 +216,7 @@ const Home = () => {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {categories.map((category, index) => (
               <motion.div
                 key={category.name}
@@ -189,6 +238,9 @@ const Home = () => {
                       <h3 className="text-2xl font-bold text-white drop-shadow-lg">
                         {category.name}
                       </h3>
+                      <p className="text-white mt-2 drop-shadow-lg opacity-90">
+                        {category.description}
+                      </p>
                       <p className="text-white mt-2 drop-shadow-lg">
                         Explore Collection →
                       </p>
@@ -202,7 +254,7 @@ const Home = () => {
       </div>
 
       {/* Testimonials Section */}
-      <div className="bg-gradient-to-b from-gray-50 to-white py-24">
+      <div className="bg-gradient-to-b from-gray-50 to-white py-24 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -243,7 +295,7 @@ const Home = () => {
                 </div>
                 <div className="mb-6">
                   <div className="flex text-yellow-400 mb-4">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(testimonial.rating)].map((_, i) => (
                       <FiStar key={i} className="w-5 h-5 fill-current" />
                     ))}
                   </div>
@@ -259,7 +311,7 @@ const Home = () => {
       </div>
 
       {/* Newsletter Section */}
-      <div className="relative bg-indigo-700 overflow-hidden">
+      <div className="relative bg-indigo-700 overflow-hidden w-full">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-indigo-700 mix-blend-multiply" />
         </div>
@@ -324,7 +376,7 @@ const Home = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white">
+      <footer className="bg-gray-900 text-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Company Info */}
