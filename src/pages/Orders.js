@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useSelector } from 'react-redux';
-import { FiShoppingBag, FiDownload, FiEye } from 'react-icons/fi';
+import { FiShoppingBag, FiDownload, FiEye, FiX } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -18,43 +18,66 @@ const Orders = () => {
     let unsubscribe;
 
     const fetchOrders = async () => {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
+      }
+
       try {
+        // Query for all orders of the user without orderBy to avoid index requirement
         const q = query(
           collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', user.uid)
         );
         
-        unsubscribe = onSnapshot(q, (querySnapshot) => {
-          const ordersData = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          
-          // Check payment status for pending orders
-          ordersData.forEach(order => {
-            if (order.paymentStatus !== 'completed' && order.checkoutRequestId) {
-              checkPaymentStatus(order.id, order.checkoutRequestId);
+        // Real-time listener for orders with better error handling
+        unsubscribe = onSnapshot(
+          q, 
+          (querySnapshot) => {
+            try {
+              const ordersData = [];
+              querySnapshot.forEach((doc) => {
+                try {
+                  const data = doc.data();
+                  ordersData.push({
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
+                    updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date()
+                  });
+                } catch (docError) {
+                  console.error('Error processing document:', docError);
+                }
+              });
+              
+              // Sort orders by date client-side instead
+              ordersData.sort((a, b) => b.createdAt - a.createdAt);
+              
+              setOrders(ordersData);
+              setLoading(false);
+            } catch (error) {
+              console.error('Error processing orders data:', error);
+              toast.error('Error loading orders data');
+              setLoading(false);
             }
-          });
-
-          // Filter to show only completed payment orders
-          const completedOrders = ordersData.filter(order => order.paymentStatus === 'completed');
-          setOrders(completedOrders);
-        }, (error) => {
-          console.error('Error fetching orders:', error);
-          toast.error('Unable to load your orders');
-        });
+          },
+          (error) => {
+            console.error('Firestore subscription error:', error);
+            toast.error('Unable to load your orders. Please try again.');
+            setLoading(false);
+          }
+        );
       } catch (error) {
         console.error('Error setting up orders listener:', error);
-        toast.error('Unable to load your orders');
-      } finally {
+        toast.error('Unable to load your orders. Please refresh the page.');
         setLoading(false);
       }
     };
 
     if (user) {
       fetchOrders();
+    } else {
+      setLoading(false);
     }
 
     return () => {
@@ -64,29 +87,19 @@ const Orders = () => {
     };
   }, [user]);
 
-  const checkPaymentStatus = async (orderId, checkoutRequestId) => {
-    if (!checkoutRequestId) return;
-
+  const handleCancelOrder = async (orderId) => {
     try {
-      const response = await fetch(`http://localhost:5000/payment-status/${checkoutRequestId}`);
-      const data = await response.json();
-
       const orderRef = doc(db, 'orders', orderId);
-      if (data.ResultCode === "0") {
-        // Payment successful
-        await updateDoc(orderRef, {
-          paymentStatus: 'completed',
-          updatedAt: new Date()
-        });
-      } else if (data.ResultCode === "1032") {
-        // Payment cancelled
-        await updateDoc(orderRef, {
-          paymentStatus: 'cancelled',
-          updatedAt: new Date()
-        });
-      }
+      await updateDoc(orderRef, {
+        status: 'canceled',
+        paymentStatus: 'canceled',
+        isVisible: false,
+        updatedAt: new Date()
+      });
+      toast.success('Order canceled successfully');
     } catch (error) {
-      console.error('Error checking payment status:', error);
+      console.error('Error canceling order:', error);
+      toast.error('Failed to cancel order');
     }
   };
 
@@ -101,7 +114,7 @@ const Orders = () => {
       // Add order details
       doc.setFontSize(12);
       doc.text(`Order ID: #${order.id.slice(-6)}`, 20, 40);
-      doc.text(`Date: ${order.createdAt.toDate().toLocaleDateString()}`, 20, 50);
+      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`, 20, 50);
       doc.text(`Customer: ${order.shippingDetails.name}`, 20, 60);
       doc.text(`Email: ${order.shippingDetails.email}`, 20, 70);
       doc.text(`Phone: ${order.shippingDetails.phone}`, 20, 80);
@@ -151,6 +164,13 @@ const Orders = () => {
     );
   }
 
+  // Filter orders to show only those with completed payments or in processing
+  const displayOrders = orders.filter(order => 
+    order.paymentStatus === 'completed' || 
+    order.paymentStatus === 'processing' || 
+    order.status === 'processing'
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <motion.div
@@ -161,29 +181,40 @@ const Orders = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">My Orders</h1>
           <div className="text-sm text-gray-600">
-            Showing {orders.length} order{orders.length !== 1 ? 's' : ''}
+            Showing {displayOrders.length} order{displayOrders.length !== 1 ? 's' : ''}
           </div>
         </div>
 
-        {orders.length > 0 ? (
+        {displayOrders.length > 0 ? (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {displayOrders.map((order) => (
               <div key={order.id} className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-medium">Order #{order.id.slice(-6)}</h3>
                     <p className="text-sm text-gray-500">
-                      Placed on {order.createdAt.toDate().toLocaleDateString()}
+                      Placed on {order.createdAt.toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex space-x-4">
-                    <button
-                      onClick={() => generateReceipt(order)}
-                      className="flex items-center text-gray-600 hover:text-gray-900"
-                    >
-                      <FiDownload className="mr-1" />
-                      Receipt
-                    </button>
+                    {order.paymentStatus === 'completed' && (
+                      <button
+                        onClick={() => generateReceipt(order)}
+                        className="flex items-center text-gray-600 hover:text-gray-900"
+                      >
+                        <FiDownload className="mr-1" />
+                        Receipt
+                      </button>
+                    )}
+                    {order.status !== 'canceled' && (
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        className="flex items-center text-red-600 hover:text-red-900"
+                      >
+                        <FiX className="mr-1" />
+                        Cancel
+                      </button>
+                    )}
                     <Link
                       to={`/order/${order.id}`}
                       className="flex items-center text-indigo-600 hover:text-indigo-900"
@@ -201,15 +232,20 @@ const Orders = () => {
                       <p className={`mt-1 text-sm ${
                         order.status === 'processing' ? 'text-green-600' :
                         order.status === 'pending' ? 'text-yellow-600' :
-                        'text-red-600'
+                        order.status === 'canceled' ? 'text-red-600' :
+                        'text-gray-600'
                       }`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">Payment</p>
-                      <p className="mt-1 text-sm text-green-600">
-                        Completed
+                      <p className={`mt-1 text-sm ${
+                        order.paymentStatus === 'completed' ? 'text-green-600' :
+                        order.paymentStatus === 'processing' ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                       </p>
                     </div>
                     <div>
