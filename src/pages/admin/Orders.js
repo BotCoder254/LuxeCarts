@@ -19,18 +19,20 @@ const AdminOrders = () => {
   const checkAndDeleteOldOrders = async (orders) => {
     const now = new Date();
     orders.forEach(async (order) => {
-      if (order.status === 'delivered' && order.updatedAt) {
-        const deliveredDate = order.updatedAt.toDate();
-        const hoursSinceDelivered = (now - deliveredDate) / (1000 * 60 * 60);
-        
-        if (hoursSinceDelivered >= 24) {
-          try {
+      if (order.status === 'delivered' && order.updatedAt && order.updatedAt.toDate) {
+        try {
+          const deliveredDate = order.updatedAt.toDate(); // Convert to JavaScript Date
+          const hoursSinceDelivered = (now - deliveredDate) / (1000 * 60 * 60);
+
+          if (hoursSinceDelivered >= 24) {
             await deleteDoc(doc(db, 'orders', order.id));
             console.log(`Deleted order ${order.id} after 24 hours of delivery`);
-          } catch (error) {
-            console.error('Error deleting old order:', error);
           }
+        } catch (error) {
+          console.error('Error deleting old order:', error);
         }
+      } else {
+        console.warn(`Order ${order.id} has an invalid or missing updatedAt field. Skipping deletion.`);
       }
     });
   };
@@ -39,29 +41,29 @@ const AdminOrders = () => {
   const generateDetailedReceipt = (order) => {
     try {
       const doc = new jsPDF();
-      
+
       // Add header with logo
       doc.setFontSize(20);
       doc.text('LuxeCarts - Order Details', 105, 20, { align: 'center' });
-      
+
       // Add order information
       doc.setFontSize(12);
       doc.text(`Order ID: #${order.id.slice(-6)}`, 20, 40);
       doc.text(`Date: ${order.createdAt.toDate().toLocaleDateString()}`, 20, 50);
       doc.text(`Status: ${order.status.toUpperCase()}`, 20, 60);
-      
+
       // Add customer details
       doc.text('Customer Information:', 20, 80);
       doc.text(`Name: ${order.shippingDetails.name}`, 30, 90);
       doc.text(`Email: ${order.shippingDetails.email}`, 30, 100);
       doc.text(`Phone: ${order.shippingDetails.phone}`, 30, 110);
-      
+
       // Add shipping address
       doc.text('Shipping Address:', 20, 130);
       doc.text(order.shippingDetails.address, 30, 140);
       doc.text(`${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}`, 30, 150);
       doc.text(order.shippingDetails.country, 30, 160);
-      
+
       // Add order items table
       const tableData = order.items.map(item => [
         item.name,
@@ -69,7 +71,7 @@ const AdminOrders = () => {
         `$${item.price.toFixed(2)}`,
         `$${(item.price * item.quantity).toFixed(2)}`
       ]);
-      
+
       doc.autoTable({
         startY: 180,
         head: [['Item', 'Quantity', 'Price', 'Total']],
@@ -81,17 +83,17 @@ const AdminOrders = () => {
         headStyles: { fillColor: [79, 70, 229] },
         footStyles: { fillColor: [79, 70, 229] }
       });
-      
+
       // Add payment information
       const finalY = doc.lastAutoTable.finalY || 200;
       doc.text('Payment Information:', 20, finalY + 20);
       doc.text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, 30, finalY + 30);
       doc.text(`Payment Method: M-PESA`, 30, finalY + 40);
-      
+
       // Add footer
       doc.setFontSize(10);
       doc.text('Thank you for shopping with LuxeCarts!', 105, finalY + 60, { align: 'center' });
-      
+
       // Save the PDF
       doc.save(`order-details-${order.id.slice(-6)}.pdf`);
       toast.success('Order details downloaded successfully');
@@ -101,41 +103,48 @@ const AdminOrders = () => {
     }
   };
 
+  // Helper function to format date
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    if (timestamp instanceof Date) return timestamp.toLocaleDateString();
+    if (timestamp.toDate) return timestamp.toDate().toLocaleDateString(); // Handle Firebase Timestamp
+    return 'N/A';
+  };
+
   useEffect(() => {
     let unsubscribe;
 
     const fetchOrders = async () => {
       try {
-        // Create a query for orders with completed payment status
         const ordersQuery = query(
           collection(db, 'orders'),
-          where('paymentStatus', '==', 'completed'),
           orderBy('createdAt', 'desc')
         );
 
-        // Set up real-time listener
-        unsubscribe = onSnapshot(
-          ordersQuery,
-          (snapshot) => {
-            const ordersData = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-              createdAt: doc.data().createdAt?.toDate(),
-              updatedAt: doc.data().updatedAt?.toDate()
-            }));
-            setOrders(ordersData);
-            setLoading(false);
-            setError(null);
-            // Check and delete old delivered orders
-            checkAndDeleteOldOrders(ordersData);
-          },
-          (err) => {
-            console.error('Error fetching orders:', err);
-            setError(err.message);
-            setLoading(false);
-            toast.error('Unable to load orders. Please try again.');
-          }
-        );
+        unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+          const ordersData = snapshot.docs
+            .map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt ? data.createdAt : new Date(), // Keep as Timestamp
+                updatedAt: data.updatedAt ? data.updatedAt : new Date() // Keep as Timestamp
+              };
+            })
+            .filter(order => order.paymentStatus === 'completed');
+
+          setOrders(ordersData);
+          setLoading(false);
+          setError(null);
+          // Check and delete old delivered orders
+          checkAndDeleteOldOrders(ordersData);
+        }, (err) => {
+          console.error('Error fetching orders:', err);
+          setError(err.message);
+          setLoading(false);
+          toast.error('Unable to load orders. Please try again.');
+        });
       } catch (err) {
         console.error('Error setting up orders listener:', err);
         setError(err.message);
@@ -146,7 +155,6 @@ const AdminOrders = () => {
 
     fetchOrders();
 
-    // Cleanup subscription
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -157,10 +165,10 @@ const AdminOrders = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     if (updating) return;
     setUpdating(orderId);
-    
+
     try {
       const orderRef = doc(db, 'orders', orderId);
-      
+
       // Update order status
       await updateDoc(orderRef, {
         status: newStatus,
@@ -265,7 +273,7 @@ const AdminOrders = () => {
                       {order.shippingDetails.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.createdAt?.toDate().toLocaleDateString()}
+                      {formatDate(order.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
