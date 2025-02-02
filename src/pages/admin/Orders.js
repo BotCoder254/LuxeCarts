@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, getDocs, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { FiShoppingBag, FiEye, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -106,12 +106,13 @@ const AdminOrders = () => {
 
     const fetchOrders = async () => {
       try {
+        // Query only for orders with completed payment status
         const q = query(
           collection(db, 'orders'),
+          where('paymentStatus', '==', 'completed'),
           orderBy('createdAt', 'desc')
         );
         
-        // Use onSnapshot instead of getDocs to listen for real-time updates
         unsubscribe = onSnapshot(q, (querySnapshot) => {
           const ordersData = querySnapshot.docs.map(doc => ({
             id: doc.id,
@@ -148,11 +149,37 @@ const AdminOrders = () => {
     setUpdating(orderId);
     
     try {
+      // Update order status in Firebase
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
         status: newStatus,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        notificationSent: false // Reset notification flag for new status
       });
+
+      // Send status update notification via backend
+      const response = await fetch('https://luxecarts-mpesa.onrender.com/update-order-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          newStatus
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send status update notification');
+      }
+
+      // Update notification status in Firebase
+      await updateDoc(orderRef, {
+        notificationSent: true,
+        lastNotificationStatus: newStatus,
+        lastNotificationTime: new Date()
+      });
+
       toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -192,7 +219,7 @@ const AdminOrders = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Orders</h1>
           <div className="text-sm text-gray-600">
-            Showing {orders.length} order{orders.length !== 1 ? 's' : ''}
+            Showing {orders.length} completed order{orders.length !== 1 ? 's' : ''}
           </div>
         </div>
 
