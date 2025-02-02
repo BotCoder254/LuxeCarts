@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, getDocs, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { FiShoppingBag, FiEye, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -106,37 +106,47 @@ const AdminOrders = () => {
 
     const fetchOrders = async () => {
       try {
-        // Query only for orders with completed payment status
-        const q = query(
+        // Create a query for orders with completed payment status
+        const ordersQuery = query(
           collection(db, 'orders'),
           where('paymentStatus', '==', 'completed'),
           orderBy('createdAt', 'desc')
         );
-        
-        unsubscribe = onSnapshot(q, (querySnapshot) => {
-          const ordersData = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setOrders(ordersData);
-          // Check and delete old delivered orders
-          checkAndDeleteOldOrders(ordersData);
-          setLoading(false);
-        }, (error) => {
-          console.error('Error fetching orders:', error);
-          toast.error('Unable to load orders. Please try again.');
-          setLoading(false);
-        });
-      } catch (error) {
-        console.error('Error setting up orders listener:', error);
-        toast.error('Unable to load orders. Please try again.');
+
+        // Set up real-time listener
+        unsubscribe = onSnapshot(
+          ordersQuery,
+          (snapshot) => {
+            const ordersData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              createdAt: doc.data().createdAt?.toDate(),
+              updatedAt: doc.data().updatedAt?.toDate()
+            }));
+            setOrders(ordersData);
+            setLoading(false);
+            setError(null);
+            // Check and delete old delivered orders
+            checkAndDeleteOldOrders(ordersData);
+          },
+          (err) => {
+            console.error('Error fetching orders:', err);
+            setError(err.message);
+            setLoading(false);
+            toast.error('Unable to load orders. Please try again.');
+          }
+        );
+      } catch (err) {
+        console.error('Error setting up orders listener:', err);
+        setError(err.message);
         setLoading(false);
+        toast.error('Unable to load orders. Please try again.');
       }
     };
 
     fetchOrders();
 
-    // Cleanup subscription on unmount
+    // Cleanup subscription
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -149,15 +159,16 @@ const AdminOrders = () => {
     setUpdating(orderId);
     
     try {
-      // Update order status in Firebase
       const orderRef = doc(db, 'orders', orderId);
+      
+      // Update order status
       await updateDoc(orderRef, {
         status: newStatus,
         updatedAt: new Date(),
-        notificationSent: false // Reset notification flag for new status
+        notificationSent: false
       });
 
-      // Send status update notification via backend
+      // Send status update notification
       const response = await fetch('https://luxecarts-mpesa.onrender.com/update-order-status', {
         method: 'POST',
         headers: {
@@ -172,13 +183,6 @@ const AdminOrders = () => {
       if (!response.ok) {
         throw new Error('Failed to send status update notification');
       }
-
-      // Update notification status in Firebase
-      await updateDoc(orderRef, {
-        notificationSent: true,
-        lastNotificationStatus: newStatus,
-        lastNotificationTime: new Date()
-      });
 
       toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
@@ -204,7 +208,7 @@ const AdminOrders = () => {
   if (error) {
     return (
       <div className="p-6">
-        <div className="text-center text-red-600">{error}</div>
+        <div className="text-center text-red-600">Error loading orders: {error}</div>
       </div>
     );
   }
