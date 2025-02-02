@@ -408,19 +408,25 @@ const CheckoutForm = () => {
           </h3>
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item.id} className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="h-16 w-16 object-cover rounded"
-                  />
-                  <div className="ml-4">
-                    <p className="font-medium">{item.name}</p>
+              <div key={item.id} className="flex justify-between items-center py-2">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0 w-16 h-16 overflow-hidden rounded-md">
+                    <img
+                      src={item.images?.[0] || item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/150';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{item.name}</p>
                     <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                   </div>
                 </div>
-                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
               </div>
             ))}
             <div className="border-t pt-4 space-y-2">
