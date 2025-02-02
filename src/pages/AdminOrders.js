@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FiShoppingBag, FiEye, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -12,6 +12,92 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Add function to check and delete old delivered orders
+  const checkAndDeleteOldOrders = async (orders) => {
+    const now = new Date();
+    orders.forEach(async (order) => {
+      if (order.status === 'delivered' && order.updatedAt) {
+        const deliveredDate = order.updatedAt.toDate();
+        const hoursSinceDelivered = (now - deliveredDate) / (1000 * 60 * 60);
+        
+        if (hoursSinceDelivered >= 24) {
+          try {
+            await deleteDoc(doc(db, 'orders', order.id));
+            console.log(`Deleted order ${order.id} after 24 hours of delivery`);
+          } catch (error) {
+            console.error('Error deleting old order:', error);
+          }
+        }
+      }
+    });
+  };
+
+  // Add function to generate detailed receipt
+  const generateDetailedReceipt = (order) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add header with logo
+      doc.setFontSize(20);
+      doc.text('LuxeCarts - Order Details', 105, 20, { align: 'center' });
+      
+      // Add order information
+      doc.setFontSize(12);
+      doc.text(`Order ID: #${order.id.slice(-6)}`, 20, 40);
+      doc.text(`Date: ${order.createdAt.toDate().toLocaleDateString()}`, 20, 50);
+      doc.text(`Status: ${order.status.toUpperCase()}`, 20, 60);
+      
+      // Add customer details
+      doc.text('Customer Information:', 20, 80);
+      doc.text(`Name: ${order.shippingDetails.name}`, 30, 90);
+      doc.text(`Email: ${order.shippingDetails.email}`, 30, 100);
+      doc.text(`Phone: ${order.shippingDetails.phone}`, 30, 110);
+      
+      // Add shipping address
+      doc.text('Shipping Address:', 20, 130);
+      doc.text(order.shippingDetails.address, 30, 140);
+      doc.text(`${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}`, 30, 150);
+      doc.text(order.shippingDetails.country, 30, 160);
+      
+      // Add order items table
+      const tableData = order.items.map(item => [
+        item.name,
+        item.quantity,
+        `$${item.price.toFixed(2)}`,
+        `$${(item.price * item.quantity).toFixed(2)}`
+      ]);
+      
+      doc.autoTable({
+        startY: 180,
+        head: [['Item', 'Quantity', 'Price', 'Total']],
+        body: tableData,
+        foot: [
+          ['', '', 'Total:', `$${order.total.toFixed(2)}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229] },
+        footStyles: { fillColor: [79, 70, 229] }
+      });
+      
+      // Add payment information
+      const finalY = doc.lastAutoTable.finalY || 200;
+      doc.text('Payment Information:', 20, finalY + 20);
+      doc.text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, 30, finalY + 30);
+      doc.text(`Payment Method: M-PESA`, 30, finalY + 40);
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.text('Thank you for shopping with LuxeCarts!', 105, finalY + 60, { align: 'center' });
+      
+      // Save the PDF
+      doc.save(`order-details-${order.id.slice(-6)}.pdf`);
+      toast.success('Order details downloaded successfully');
+    } catch (error) {
+      console.error('Error generating order PDF:', error);
+      toast.error('Failed to generate order details');
+    }
+  };
 
   useEffect(() => {
     let unsubscribe;
@@ -33,6 +119,8 @@ const AdminOrders = () => {
             ...doc.data()
           }));
           setOrders(ordersData);
+          // Check and delete old delivered orders
+          checkAndDeleteOldOrders(ordersData);
           setLoading(false);
         }, (error) => {
           console.error('Error fetching orders:', error);
@@ -54,62 +142,6 @@ const AdminOrders = () => {
       }
     };
   }, []);
-
-  const generateOrderPDF = (order) => {
-    try {
-      const doc = new jsPDF();
-      
-      // Add order header
-      doc.setFontSize(20);
-      doc.text('Order Details', 105, 20, { align: 'center' });
-      
-      // Add order information
-      doc.setFontSize(12);
-      doc.text(`Order ID: #${order.id.slice(-6)}`, 20, 40);
-      doc.text(`Date: ${order.createdAt.toDate().toLocaleDateString()}`, 20, 50);
-      
-      // Add customer details
-      doc.text('Customer Information:', 20, 70);
-      doc.text(`Name: ${order.shippingDetails.name}`, 30, 80);
-      doc.text(`Email: ${order.shippingDetails.email}`, 30, 90);
-      doc.text(`Phone: ${order.shippingDetails.phone}`, 30, 100);
-      
-      // Add shipping address
-      doc.text('Shipping Address:', 20, 120);
-      doc.text(order.shippingDetails.address, 30, 130);
-      doc.text(`${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}`, 30, 140);
-      doc.text(order.shippingDetails.country, 30, 150);
-      
-      // Add order items
-      const tableData = order.items.map(item => [
-        item.name,
-        item.quantity,
-        `$${item.price.toFixed(2)}`,
-        `$${(item.price * item.quantity).toFixed(2)}`
-      ]);
-      
-      doc.autoTable({
-        startY: 170,
-        head: [['Item', 'Quantity', 'Price', 'Total']],
-        body: tableData,
-        foot: [
-          ['', '', 'Total:', `$${order.total.toFixed(2)}`]
-        ],
-      });
-      
-      // Add order status
-      const finalY = doc.lastAutoTable.finalY || 180;
-      doc.text(`Order Status: ${order.status.toUpperCase()}`, 20, finalY + 20);
-      doc.text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, 20, finalY + 30);
-      
-      // Save the PDF
-      doc.save(`order-details-${order.id.slice(-6)}.pdf`);
-      toast.success('Order details downloaded successfully');
-    } catch (error) {
-      console.error('Error generating order PDF:', error);
-      toast.error('Failed to generate order details');
-    }
-  };
 
   if (loading) {
     return (
@@ -193,14 +225,16 @@ const AdminOrders = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-4">
                         <button
-                          onClick={() => generateOrderPDF(order)}
+                          onClick={() => generateDetailedReceipt(order)}
                           className="text-gray-600 hover:text-gray-900"
+                          title="Download Receipt"
                         >
                           <FiDownload className="w-5 h-5" />
                         </button>
                         <Link
                           to={`/admin/orders/${order.id}`}
                           className="text-indigo-600 hover:text-indigo-900"
+                          title="View Details"
                         >
                           <FiEye className="w-5 h-5" />
                         </Link>
