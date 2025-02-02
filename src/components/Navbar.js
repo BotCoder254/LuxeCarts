@@ -70,225 +70,227 @@ const Navbar = () => {
   }
 
   return (
-    <header
-      className={`fixed w-full top-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'
-      }`}
-    >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and Main Navigation */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center">
-              <FiShoppingBag className="h-8 w-8 text-indigo-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">LuxeCart</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:ml-8 md:flex md:space-x-4">
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                  Categories
-                </button>
-                <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="py-1">
-                    {categories.map((category) => (
-                      <Link
-                        key={category}
-                        to={`/products?category=${category}`}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                      >
-                        {category}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <Link
-                to="/products"
-                className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                All Products
+    <>
+      <header
+        className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'
+        }`}
+      >
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            {/* Logo and Main Navigation */}
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center">
+                <FiShoppingBag className="h-8 w-8 text-indigo-600" />
+                <span className="ml-2 text-2xl font-bold text-gray-900">LuxeCart</span>
               </Link>
-              {isAdmin && (
+
+              {/* Desktop Navigation */}
+              <div className="hidden md:ml-8 md:flex md:space-x-4">
                 <div className="relative group">
                   <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                    Admin
+                    Categories
                   </button>
                   <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     <div className="py-1">
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to="/admin/products"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Products
-                      </Link>
-                      <Link
-                        to="/admin/orders"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Orders
-                      </Link>
-                      <Link
-                        to="/admin/users"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Users
-                      </Link>
+                      {categories.map((category) => (
+                        <Link
+                          key={category}
+                          to={`/products?category=${category}`}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                        >
+                          {category}
+                        </Link>
+                      ))}
                     </div>
                   </div>
+                </div>
+                <Link
+                  to="/products"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  All Products
+                </Link>
+                {isAdmin && (
+                  <div className="relative group">
+                    <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                      Admin
+                    </button>
+                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <div className="py-1">
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/admin/products"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Products
+                        </Link>
+                        <Link
+                          to="/admin/orders"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Orders
+                        </Link>
+                        <Link
+                          to="/admin/users"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Users
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
+              <form onSubmit={handleSearch} className="w-full">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+              </form>
+            </div>
+
+            {/* Right Side Navigation */}
+            <div className="flex items-center space-x-4">
+              {/* Cart Icon */}
+              <Link
+                to="/cart"
+                className="p-2 text-gray-700 hover:text-indigo-600 relative"
+              >
+                <FiShoppingCart className="h-6 w-6" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Link>
+
+              {/* Favorites Icon */}
+              <Link
+                to="/favorites"
+                className="p-2 text-gray-700 hover:text-indigo-600 relative"
+              >
+                <FiHeart className="h-6 w-6" />
+                {favorites.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {favorites.length}
+                  </span>
+                )}
+              </Link>
+
+              {/* User Menu */}
+              {user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600"
+                  >
+                    {user.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName}
+                        className="h-8 w-8 rounded-full border-2 border-indigo-600"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+                        {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                      </div>
+                    )}
+                    <span className="hidden md:block text-sm font-medium">
+                      {user.displayName || 'Account'}
+                    </span>
+                  </button>
+
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
+                      >
+                        <Link
+                          to="/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Profile
+                        </Link>
+                        <Link
+                          to="/orders"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Orders
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Logout
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="hidden md:flex items-center space-x-4">
+                  <Link
+                    to="/login"
+                    className="text-gray-700 hover:text-indigo-600 text-sm font-medium"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="md:hidden p-2"
+              >
+                {isMenuOpen ? (
+                  <FiX className="h-6 w-6" />
+                ) : (
+                  <FiMenu className="h-6 w-6" />
+                )}
+              </button>
+
+              {/* Admin links */}
+              {user?.isAdmin && (
+                <div className="hidden md:flex items-center space-x-4">
+                  <Link
+                    to="/admin/orders"
+                    className="text-gray-600 hover:text-gray-900 flex items-center"
+                  >
+                    <FiShoppingBag className="mr-1" />
+                    Orders
+                  </Link>
+                  {/* Other admin links */}
                 </div>
               )}
             </div>
           </div>
-
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
-            <form onSubmit={handleSearch} className="w-full">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
-            </form>
-          </div>
-
-          {/* Right Side Navigation */}
-          <div className="flex items-center space-x-4">
-            {/* Cart Icon */}
-            <Link
-              to="/cart"
-              className="p-2 text-gray-700 hover:text-indigo-600 relative"
-            >
-              <FiShoppingCart className="h-6 w-6" />
-              {cartItems.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItems.length}
-                </span>
-              )}
-            </Link>
-
-            {/* Favorites Icon */}
-            <Link
-              to="/favorites"
-              className="p-2 text-gray-700 hover:text-indigo-600 relative"
-            >
-              <FiHeart className="h-6 w-6" />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
-
-            {/* User Menu */}
-            {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600"
-                >
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName}
-                      className="h-8 w-8 rounded-full border-2 border-indigo-600"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
-                      {user.displayName?.charAt(0) || user.email?.charAt(0)}
-                    </div>
-                  )}
-                  <span className="hidden md:block text-sm font-medium">
-                    {user.displayName || 'Account'}
-                  </span>
-                </button>
-
-                <AnimatePresence>
-                  {isProfileOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
-                    >
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        to="/orders"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                      >
-                        Orders
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        Logout
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-700 hover:text-indigo-600 text-sm font-medium"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2"
-            >
-              {isMenuOpen ? (
-                <FiX className="h-6 w-6" />
-              ) : (
-                <FiMenu className="h-6 w-6" />
-              )}
-            </button>
-
-            {/* Admin links */}
-            {user?.isAdmin && (
-              <div className="hidden md:flex items-center space-x-4">
-                <Link
-                  to="/admin/orders"
-                  className="text-gray-600 hover:text-gray-900 flex items-center"
-                >
-                  <FiShoppingBag className="mr-1" />
-                  Orders
-                </Link>
-                {/* Other admin links */}
-              </div>
-            )}
-          </div>
-        </div>
+        </nav>
 
         {/* Mobile Menu */}
         <AnimatePresence>
@@ -391,8 +393,86 @@ const Navbar = () => {
             </motion.div>
           )}
         </AnimatePresence>
+      </header>
+
+      {/* Bottom Mobile Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div className="flex justify-around items-center h-16">
+          <Link
+            to="/"
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
+          >
+            <FiGrid className="h-6 w-6" />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+
+          <Link
+            to="/products"
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
+          >
+            <FiShoppingBag className="h-6 w-6" />
+            <span className="text-xs mt-1">Products</span>
+          </Link>
+
+          <Link
+            to="/cart"
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 relative"
+          >
+            <FiShoppingCart className="h-6 w-6" />
+            <span className="text-xs mt-1">Cart</span>
+            {cartItems.length > 0 && (
+              <span className="absolute top-0 right-3 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItems.length}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            to="/favorites"
+            className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600 relative"
+          >
+            <FiHeart className="h-6 w-6" />
+            <span className="text-xs mt-1">Favorites</span>
+            {favorites.length > 0 && (
+              <span className="absolute top-0 right-3 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {favorites.length}
+              </span>
+            )}
+          </Link>
+
+          {user ? (
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
+            >
+              <FiUser className="h-6 w-6" />
+              <span className="text-xs mt-1">Profile</span>
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
+            >
+              <FiUser className="h-6 w-6" />
+              <span className="text-xs mt-1">Login</span>
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
+            >
+              <FiGrid className="h-6 w-6" />
+              <span className="text-xs mt-1">Admin</span>
+            </Link>
+          )}
+        </div>
       </nav>
-    </header>
+
+      {/* Add padding to the bottom of the page on mobile to account for the bottom navigation */}
+      <div className="md:hidden h-16" />
+    </>
   );
 };
 
