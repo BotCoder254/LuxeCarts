@@ -40,10 +40,12 @@ const AdminDashboard = () => {
 
         // Fetch orders
         const ordersSnap = await getDocs(collection(db, 'orders'));
-        const orders = ordersSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const orders = ordersSnap.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(order => order.paymentStatus === 'completed');
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
 
         // Fetch users count
