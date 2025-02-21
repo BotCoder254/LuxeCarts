@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowRight } from 'react-icons/fi';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from './ProductCard';
 import { ThreeDots } from 'react-loader-spinner';
+import toast from 'react-hot-toast';
 
 const FeaturedProducts = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const isPreview = searchParams.get('preview') === 'true';
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
@@ -36,6 +40,13 @@ const FeaturedProducts = () => {
     fetchFeaturedProducts();
   }, []);
 
+  const handlePreviewClick = (e) => {
+    if (isPreview) {
+      e.preventDefault();
+      toast.info('This is a preview. Interactive features are disabled.');
+    }
+  };
+
   return (
     <div className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,6 +63,13 @@ const FeaturedProducts = () => {
           <p className="mt-4 text-xl text-gray-600">
             Discover our latest and most popular items
           </p>
+          <Link
+            to={isPreview ? '#' : '/products'}
+            className={`mt-4 inline-flex items-center text-indigo-600 ${isPreview ? 'opacity-50 cursor-not-allowed' : 'hover:text-indigo-800'}`}
+            onClick={handlePreviewClick}
+          >
+            View All Products <FiArrowRight className="ml-2" />
+          </Link>
         </motion.div>
 
         {loading ? (
@@ -65,15 +83,6 @@ const FeaturedProducts = () => {
             ))}
           </div>
         )}
-
-        <div className="mt-12 text-center">
-          <Link
-            to="/products"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            View All Products <FiArrowRight className="ml-2" />
-          </Link>
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { m as motion } from 'framer-motion';
 import { FiShoppingBag, FiTruck, FiCreditCard, FiShield, FiStar, FiArrowRight } from 'react-icons/fi';
 import FeaturedProducts from '../components/FeaturedProducts';
+import { toast } from 'react-hot-toast';
 
 const features = [
   {
@@ -108,10 +109,40 @@ const testimonials = [
 ];
 
 const Home = () => {
+  // Get preview mode from URL parameters
+  const searchParams = new URLSearchParams(window.location.search);
+  const isPreview = searchParams.get('preview') === 'true';
+
+  // Disable interactive elements in preview mode
+  const handlePreviewClick = (e) => {
+    if (isPreview) {
+      e.preventDefault();
+      e.stopPropagation();
+      toast.info('This is a preview. Interactive features are disabled.');
+    }
+  };
+
+  // Prevent navigation in preview mode
+  useEffect(() => {
+    if (isPreview) {
+      window.history.pushState(null, '', window.location.href);
+      const handlePopState = () => {
+        window.history.pushState(null, '', window.location.href);
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isPreview]);
+
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-indigo-900 to-blue-900 h-[85vh]">
+        {isPreview && (
+          <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2 z-50">
+            Preview Mode - Interactive features are disabled
+          </div>
+        )}
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1441986300917-64674bd600d8"
@@ -136,13 +167,15 @@ const Home = () => {
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/products"
-                className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className={`inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-indigo-600 ${isPreview ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105'} shadow-lg`}
+                onClick={handlePreviewClick}
               >
                 Shop Now <FiArrowRight className="ml-2" />
               </Link>
               <Link
                 to="/register"
-                className="inline-flex items-center px-8 py-4 border-2 border-white text-lg font-medium rounded-md text-white hover:bg-white hover:text-indigo-900 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className={`inline-flex items-center px-8 py-4 border-2 border-white text-lg font-medium rounded-md text-white ${isPreview ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:text-indigo-900 transition-all duration-200 transform hover:scale-105'} shadow-lg`}
+                onClick={handlePreviewClick}
               >
                 Join Us
               </Link>

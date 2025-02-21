@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../firebase/config';
-import { FiEdit2, FiTrash2, FiPlus, FiImage, FiX } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiImage, FiX, FiShoppingBag } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -520,12 +520,22 @@ const AdminProducts = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
-        <Link
-          to="/admin/products/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-        >
-          <FiPlus className="mr-2" /> Add New Product
-        </Link>
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/?preview=true"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={(e) => {
+              e.preventDefault();
+              const previewUrl = window.location.origin + '/?preview=true';
+              window.open(previewUrl, '_blank', 'noopener,noreferrer');
+            }}
+          >
+            <FiShoppingBag className="mr-2 -ml-1 h-5 w-5" />
+            View Store
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

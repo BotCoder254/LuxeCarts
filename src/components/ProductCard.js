@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/slices/cartSlice';
 import { addToFavorites, removeFromFavorites } from '../store/slices/favoriteSlice';
@@ -11,15 +11,26 @@ const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.favorites.items);
   const isFavorite = favorites.some(item => item.id === product.id);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const isPreview = searchParams.get('preview') === 'true';
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    if (isPreview) {
+      toast.info('This is a preview. Interactive features are disabled.');
+      return;
+    }
     dispatch(addToCart(product));
     toast.success('Added to cart!');
   };
 
   const handleToggleFavorite = (e) => {
     e.preventDefault();
+    if (isPreview) {
+      toast.info('This is a preview. Interactive features are disabled.');
+      return;
+    }
     if (isFavorite) {
       dispatch(removeFromFavorites(product.id));
       toast.success('Removed from favorites');
@@ -41,7 +52,11 @@ const ProductCard = ({ product }) => {
       exit={{ opacity: 0, y: -20 }}
       className="group relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
     >
-      <Link to={`/product/${product.id}`} className="block">
+      <Link 
+        to={isPreview ? '#' : `/product/${product.id}`} 
+        className="block"
+        onClick={(e) => isPreview && e.preventDefault()}
+      >
         <div className="relative aspect-w-1 aspect-h-1">
           <img
             src={product.images?.[0] || product.image}
