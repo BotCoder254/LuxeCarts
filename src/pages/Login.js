@@ -367,42 +367,75 @@ const Login = () => {
 
 
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex w-full max-w-5xl ">
+        <div className="hidden lg:block w-1/2 pr-8 ">
+          <img
+            src="/login-side-image.jpg"
+            alt="Luxury Shopping"
+            className="w-full h-full object-cover rounded-l-xl shadow-lg"
+          />
+        </div>
+        <motion.div
 
 
 
-      <motion.div
+          initial={{ opacity: 0, y: 20 }}
 
 
 
-        initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
 
 
 
-        animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
 
 
 
-        transition={{ duration: 0.5 }}
+          className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg"
 
 
 
-        className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg"
+        >
 
 
 
-      >
+          <div>
 
 
 
-        <div>
+            <div className="flex justify-center">
 
 
 
-          <div className="flex justify-center">
+              <FiShoppingBag className="h-12 w-12 text-indigo-600" />
 
 
 
-            <FiShoppingBag className="h-12 w-12 text-indigo-600" />
+            </div>
+
+
+
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+
+
+
+              Welcome back to LuxeCart
+
+
+
+            </h2>
+
+
+
+            <p className="mt-2 text-center text-sm text-gray-600">
+
+
+
+              Enter your credentials to access your account
+
+
+
+            </p>
 
 
 
@@ -410,31 +443,27 @@ const Login = () => {
 
 
 
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
 
 
 
-            Welcome back to LuxeCart
 
+          <div className="flex flex-col gap-4">
 
 
-          </h2>
 
 
 
-          <p className="mt-2 text-center text-sm text-gray-600">
 
 
+            <button
 
-            Enter your credentials to access your account
 
 
 
-          </p>
 
 
 
-        </div>
+              type="button"
 
 
 
@@ -442,7 +471,7 @@ const Login = () => {
 
 
 
-        <div className="flex flex-col gap-4">
+              onClick={handleGoogleSignIn}
 
 
 
@@ -450,7 +479,7 @@ const Login = () => {
 
 
 
-          <button
+              className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 
 
 
@@ -458,7 +487,7 @@ const Login = () => {
 
 
 
-            type="button"
+            >
 
 
 
@@ -466,7 +495,7 @@ const Login = () => {
 
 
 
-            onClick={handleGoogleSignIn}
+              <FcGoogle className="h-5 w-5" />
 
 
 
@@ -474,7 +503,7 @@ const Login = () => {
 
 
 
-            className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              Continue with Google
 
 
 
@@ -482,63 +511,7 @@ const Login = () => {
 
 
 
-          >
-
-
-
-
-
-
-
-            <FcGoogle className="h-5 w-5" />
-
-
-
-
-
-
-
-            Continue with Google
-
-
-
-
-
-
-
-          </button>
-
-
-
-
-
-
-
-        </div>
-
-
-
-
-
-
-
-        <div className="relative">
-
-
-
-
-
-
-
-          <div className="absolute inset-0 flex items-center">
-
-
-
-
-
-
-
-            <div className="w-full border-t border-gray-300" />
+            </button>
 
 
 
@@ -554,7 +527,7 @@ const Login = () => {
 
 
 
-          <div className="relative flex justify-center text-sm">
+          <div className="relative">
 
 
 
@@ -562,7 +535,47 @@ const Login = () => {
 
 
 
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <div className="absolute inset-0 flex items-center">
+
+
+
+
+
+
+
+              <div className="w-full border-t border-gray-300" />
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div className="relative flex justify-center text-sm">
+
+
+
+
+
+
+
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+
+
+
+
+
+
+
+            </div>
 
 
 
@@ -574,47 +587,79 @@ const Login = () => {
 
 
 
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
 
 
 
-
-        </div>
-
-
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="rounded-md shadow-sm space-y-4">
 
 
 
-          <div className="rounded-md shadow-sm space-y-4">
+              <div>
 
 
 
-            <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
 
 
 
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email address
 
 
 
-                Email address
+                </label>
 
 
 
-              </label>
+                <div className="mt-1 relative">
 
 
 
-              <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 
 
 
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiMail className="h-5 w-5 text-gray-400" />
 
 
 
-                  <FiMail className="h-5 w-5 text-gray-400" />
+                  </div>
+
+
+
+                  <input
+
+
+
+                    id="email"
+
+
+
+                    type="email"
+
+
+
+                    required
+
+
+
+                    value={formData.email}
+
+
+
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+
+
+
+                    className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+
+
+
+                    placeholder="Enter your email"
+
+
+
+                  />
 
 
 
@@ -622,39 +667,79 @@ const Login = () => {
 
 
 
-                <input
+              </div>
 
 
 
-                  id="email"
+              <div>
 
 
 
-                  type="email"
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
 
 
 
-                  required
+                  Password
 
 
 
-                  value={formData.email}
+                </label>
 
 
 
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                <div className="mt-1 relative">
 
 
 
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 
 
 
-                  placeholder="Enter your email"
+                    <FiLock className="h-5 w-5 text-gray-400" />
 
 
 
-                />
+                  </div>
+
+
+
+                  <input
+
+
+
+                    id="password"
+
+
+
+                    type="password"
+
+
+
+                    required
+
+
+
+                    value={formData.password}
+
+
+
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+
+
+
+                    className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+
+
+
+                    placeholder="Enter your password"
+
+
+
+                  />
+
+
+
+                </div>
 
 
 
@@ -666,35 +751,15 @@ const Login = () => {
 
 
 
-            <div>
 
 
 
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+
+            <div className="flex items-center justify-between">
 
 
 
-                Password
-
-
-
-              </label>
-
-
-
-              <div className="mt-1 relative">
-
-
-
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-
-
-
-                  <FiLock className="h-5 w-5 text-gray-400" />
-
-
-
-                </div>
+              <div className="flex items-center">
 
 
 
@@ -702,35 +767,71 @@ const Login = () => {
 
 
 
-                  id="password"
+                  id="remember-me"
 
 
 
-                  type="password"
+                  name="remember-me"
 
 
 
-                  required
+                  type="checkbox"
 
 
 
-                  value={formData.password}
-
-
-
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-
-
-
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-
-
-
-                  placeholder="Enter your password"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
 
 
 
                 />
+
+
+
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+
+
+
+                  Remember me
+
+
+
+                </label>
+
+
+
+              </div>
+
+
+
+
+
+
+
+              <div className="text-sm">
+
+
+
+                <Link
+
+
+
+                  to="/forgot-password"
+
+
+
+                  className="font-medium text-indigo-600 hover:text-indigo-500"
+
+
+
+                >
+
+
+
+                  Forgot password?
+
+
+
+                </Link>
 
 
 
@@ -742,55 +843,35 @@ const Login = () => {
 
 
 
-          </div>
 
 
 
 
+            <div>
 
 
 
-          <div className="flex items-center justify-between">
+              <button
 
 
 
-            <div className="flex items-center">
+                type="submit"
 
 
 
-              <input
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 
 
 
-                id="remember-me"
+              >
 
 
 
-                name="remember-me"
+                Sign in
 
 
 
-                type="checkbox"
-
-
-
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-
-
-
-              />
-
-
-
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-
-
-
-                Remember me
-
-
-
-              </label>
+              </button>
 
 
 
@@ -802,7 +883,7 @@ const Login = () => {
 
 
 
-            <div className="text-sm">
+            <div className="text-center">
 
 
 
@@ -810,7 +891,7 @@ const Login = () => {
 
 
 
-                to="/forgot-password"
+                to="/register"
 
 
 
@@ -822,7 +903,7 @@ const Login = () => {
 
 
 
-                Forgot password?
+                Don't have an account? Sign up
 
 
 
@@ -834,90 +915,12 @@ const Login = () => {
 
 
 
-          </div>
+          </form>
 
 
 
-
-
-
-
-          <div>
-
-
-
-            <button
-
-
-
-              type="submit"
-
-
-
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-
-
-
-            >
-
-
-
-              Sign in
-
-
-
-            </button>
-
-
-
-          </div>
-
-
-
-
-
-
-
-          <div className="text-center">
-
-
-
-            <Link
-
-
-
-              to="/register"
-
-
-
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-
-
-
-            >
-
-
-
-              Don't have an account? Sign up
-
-
-
-            </Link>
-
-
-
-          </div>
-
-
-
-        </form>
-
-
-
-      </motion.div>
-
-
-
+        </motion.div>
+      </div>
     </div>
 
 

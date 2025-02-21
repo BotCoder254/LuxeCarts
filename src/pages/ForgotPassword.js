@@ -108,185 +108,203 @@ const ForgotPassword = () => {
 
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
 
-      <motion.div
+      <div className="flex w-full max-w-5xl">
 
-        initial={{ opacity: 0, y: 20 }}
+        <div className="hidden lg:block w-1/2 pr-8">
 
-        animate={{ opacity: 1, y: 0 }}
+          <img
 
-        transition={{ duration: 0.5 }}
+            src="/forgot-password-side-image.jpg"
 
-        className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg"
+            alt="Reset Password"
 
-      >
+            className="w-full h-full object-cover rounded-l-xl shadow-lg"
 
-        <div>
-
-          {emailSent ? (
-
-            <div className="text-center">
-
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-
-                <FiCheck className="h-6 w-6 text-green-600" />
-
-              </div>
-
-              <h2 className="mt-4 text-2xl font-bold text-gray-900">
-
-                Check your email
-
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-600">
-
-                We've sent a password reset link to<br />
-
-                <span className="font-medium text-indigo-600">{email}</span>
-
-              </p>
-
-            </div>
-
-          ) : (
-
-            <>
-
-              <h2 className="text-center text-3xl font-extrabold text-gray-900">
-
-                Reset your password
-
-              </h2>
-
-              <p className="mt-2 text-center text-sm text-gray-600">
-
-                Enter your email address and we'll send you a link to reset your password
-
-              </p>
-
-            </>
-
-          )}
+          />
 
         </div>
 
+        <motion.div
 
+          initial={{ opacity: 0, y: 20 }}
 
-        {!emailSent ? (
+          animate={{ opacity: 1, y: 0 }}
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          transition={{ duration: 0.5 }}
 
-            <div>
+          className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg"
 
-              <label htmlFor="email" className="sr-only">
+        >
 
-                Email address
+          <div>
 
-              </label>
+            {emailSent ? (
 
-              <div className="relative">
+              <div className="text-center">
 
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
 
-                  <FiMail className="h-5 w-5 text-gray-400" />
+                  <FiCheck className="h-6 w-6 text-green-600" />
 
                 </div>
 
-                <input
+                <h2 className="mt-4 text-2xl font-bold text-gray-900">
 
-                  id="email"
+                  Check your email
 
-                  name="email"
+                </h2>
 
-                  type="email"
+                <p className="mt-2 text-sm text-gray-600">
 
-                  autoComplete="email"
+                  We've sent a password reset link to<br />
 
-                  required
+                  <span className="font-medium text-indigo-600">{email}</span>
 
-                  value={email}
-
-                  onChange={(e) => setEmail(e.target.value)}
-
-                  className="appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-
-                  placeholder="Enter your email address"
-
-                />
+                </p>
 
               </div>
 
-            </div>
+            ) : (
+
+              <>
+
+                <h2 className="text-center text-3xl font-extrabold text-gray-900">
+
+                  Reset your password
+
+                </h2>
+
+                <p className="mt-2 text-center text-sm text-gray-600">
+
+                  Enter your email address and we'll send you a link to reset your password
+
+                </p>
+
+              </>
+
+            )}
+
+          </div>
 
 
 
-            <div>
+          {!emailSent ? (
+
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+              <div>
+
+                <label htmlFor="email" className="sr-only">
+
+                  Email address
+
+                </label>
+
+                <div className="relative">
+
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+
+                    <FiMail className="h-5 w-5 text-gray-400" />
+
+                  </div>
+
+                  <input
+
+                    id="email"
+
+                    name="email"
+
+                    type="email"
+
+                    autoComplete="email"
+
+                    required
+
+                    value={email}
+
+                    onChange={(e) => setEmail(e.target.value)}
+
+                    className="appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+
+                    placeholder="Enter your email address"
+
+                  />
+
+                </div>
+
+              </div>
+
+
+
+              <div>
+
+                <button
+
+                  type="submit"
+
+                  disabled={loading}
+
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                >
+
+                  {loading ? 'Sending...' : 'Send reset link'}
+
+                </button>
+
+              </div>
+
+            </form>
+
+          ) : (
+
+            <div className="mt-6 text-center">
 
               <button
 
-                type="submit"
+                onClick={() => {
 
-                disabled={loading}
+                  setEmailSent(false);
 
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  setEmail('');
+
+                }}
+
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
 
               >
 
-                {loading ? 'Sending...' : 'Send reset link'}
+                Try with a different email
 
               </button>
 
             </div>
 
-          </form>
+          )}
 
-        ) : (
 
-          <div className="mt-6 text-center">
 
-            <button
+          <div className="flex items-center justify-center mt-6">
 
-              onClick={() => {
+            <Link
 
-                setEmailSent(false);
+              to="/login"
 
-                setEmail('');
-
-              }}
-
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
 
             >
 
-              Try with a different email
+              <FiArrowLeft className="mr-2" />
 
-            </button>
+              Back to login
+
+            </Link>
 
           </div>
 
-        )}
+        </motion.div>
 
-
-
-        <div className="flex items-center justify-center mt-6">
-
-          <Link
-
-            to="/login"
-
-            className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
-
-          >
-
-            <FiArrowLeft className="mr-2" />
-
-            Back to login
-
-          </Link>
-
-        </div>
-
-      </motion.div>
+      </div>
 
     </div>
 
