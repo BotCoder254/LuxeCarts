@@ -365,6 +365,8 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [advancedFilters, setAdvancedFilters] = useState({
     status: '',
     brand: '',
@@ -521,6 +523,16 @@ const AdminProducts = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
         <div className="flex items-center space-x-4">
+          <button
+            onClick={() => {
+              setSelectedProduct(null);
+              setShowProductForm(true);
+            }}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <FiPlus className="mr-2 -ml-1 h-5 w-5" />
+            Add Product
+          </button>
           <Link
             to="/?preview=true"
             target="_blank"
@@ -537,6 +549,34 @@ const AdminProducts = () => {
           </Link>
         </div>
       </div>
+
+      {showProductForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-8 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">{selectedProduct ? 'Edit Product' : 'Add New Product'}</h2>
+              <button
+                onClick={() => setShowProductForm(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+            <ProductForm
+              product={selectedProduct}
+              onSubmit={async (productData) => {
+                if (selectedProduct) {
+                  await handleUpdateProduct(selectedProduct.id, productData);
+                } else {
+                  await handleAddProduct(productData);
+                }
+                setShowProductForm(false);
+              }}
+              onCancel={() => setShowProductForm(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
