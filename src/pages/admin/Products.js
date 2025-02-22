@@ -109,26 +109,26 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
           <input
             type="text"
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Category</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
           <select
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           >
             <option value="">Select Category</option>
             {categories.map((category) => (
@@ -140,77 +140,77 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Price</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
           <input
             type="number"
             step="0.01"
             required
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Stock</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
           <input
             type="number"
             required
             value={formData.stock}
             onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Sizes (comma-separated)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Sizes (comma-separated)</label>
           <input
             type="text"
             value={formData.sizes.join(', ')}
             onChange={handleSizeChange}
             placeholder="S, M, L, XL"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Colors (comma-separated)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Colors (comma-separated)</label>
           <input
             type="text"
             value={formData.colors.join(', ')}
             onChange={handleColorChange}
             placeholder="Red, Blue, Green"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Discount (%)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
           <input
             type="number"
             min="0"
             max="100"
             value={formData.discount}
             onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
           <textarea
             required
-            rows={4}
+            rows={6}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
           />
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Images</label>
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-            <div className="space-y-1 text-center">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
+          <div className="mt-1 flex justify-center px-6 py-8 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="space-y-2 text-center">
               <FiImage className="mx-auto h-12 w-12 text-gray-400" />
               <div className="flex text-sm text-gray-600">
                 <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
@@ -230,128 +230,119 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
         </div>
 
         <div className="col-span-2">
-          <label className="flex items-center">
+          <label className="flex items-center space-x-3">
             <input
               type="checkbox"
               checked={formData.featured}
               onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-              className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
-            <span className="ml-2 text-sm text-gray-600">Featured Product</span>
+            <span className="text-base text-gray-700">Featured Product</span>
           </label>
         </div>
-      </div>
 
-      <div className="col-span-2">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">Stock Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="active">Active</option>
-              <option value="out_of_stock">Out of Stock</option>
-              <option value="discontinued">Discontinued</option>
-              <option value="coming_soon">Coming Soon</option>
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">Stock Quantity</label>
-            <input
-              type="number"
-              value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Tags (comma-separated)
-        </label>
-        <input
-          type="text"
-          value={formData.tags.join(', ')}
-          onChange={handleTagsChange}
-          placeholder="e.g., wireless, bluetooth, electronics"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Brand</label>
-        <input
-          type="text"
-          value={formData.brand}
-          onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Specifications
-        </label>
-        <div className="space-y-2">
-          {Object.entries(formData.specifications).map(([key, value]) => (
-            <div key={key} className="flex gap-2">
-              <input
-                type="text"
-                value={key}
-                onChange={(e) => {
-                  const newSpecs = { ...formData.specifications };
-                  delete newSpecs[key];
-                  handleSpecificationChange(e.target.value, value);
-                }}
-                placeholder="Key"
-                className="w-1/3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-              <input
-                type="text"
-                value={value}
-                onChange={(e) => handleSpecificationChange(key, e.target.value)}
-                placeholder="Value"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const newSpecs = { ...formData.specifications };
-                  delete newSpecs[key];
-                  setFormData({ ...formData, specifications: newSpecs });
-                }}
-                className="text-red-600 hover:text-red-800"
+        <div className="col-span-2">
+          <div className="flex items-center space-x-8">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
               >
-                <FiX />
-              </button>
+                <option value="active">Active</option>
+                <option value="out_of_stock">Out of Stock</option>
+                <option value="discontinued">Discontinued</option>
+                <option value="coming_soon">Coming Soon</option>
+              </select>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => handleSpecificationChange(`spec_${Object.keys(formData.specifications).length + 1}`, '')}
-            className="text-indigo-600 hover:text-indigo-800 text-sm"
-          >
-            + Add Specification
-          </button>
+          </div>
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tags (comma-separated)
+          </label>
+          <input
+            type="text"
+            value={formData.tags.join(', ')}
+            onChange={handleTagsChange}
+            placeholder="e.g., wireless, bluetooth, electronics"
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+          <input
+            type="text"
+            value={formData.brand}
+            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Specifications
+          </label>
+          <div className="space-y-3">
+            {Object.entries(formData.specifications).map(([key, value]) => (
+              <div key={key} className="flex gap-4">
+                <input
+                  type="text"
+                  value={key}
+                  onChange={(e) => {
+                    const newSpecs = { ...formData.specifications };
+                    delete newSpecs[key];
+                    handleSpecificationChange(e.target.value, value);
+                  }}
+                  placeholder="Key"
+                  className="w-1/3 px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+                />
+                <input
+                  type="text"
+                  value={value}
+                  onChange={(e) => handleSpecificationChange(key, e.target.value)}
+                  placeholder="Value"
+                  className="flex-1 px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSpecs = { ...formData.specifications };
+                    delete newSpecs[key];
+                    setFormData({ ...formData, specifications: newSpecs });
+                  }}
+                  className="text-red-600 hover:text-red-800 px-3"
+                >
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleSpecificationChange(`spec_${Object.keys(formData.specifications).length + 1}`, '')}
+              className="text-indigo-600 hover:text-indigo-800 text-base font-medium"
+            >
+              + Add Specification
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end space-x-3">
+      <div className="flex justify-end space-x-4 pt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="px-6 py-3 border border-gray-300 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
           {loading ? 'Saving...' : product ? 'Update Product' : 'Add Product'}
         </button>
