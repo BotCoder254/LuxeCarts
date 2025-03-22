@@ -4,13 +4,35 @@ import { useNavigate } from 'react-router-dom';
 import { clearCart } from '../store/slices/cartSlice';
 import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { FiShoppingBag, FiTruck, FiLock } from 'react-icons/fi';
+import { FiShoppingBag, FiTruck, FiLock, FiCreditCard } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { inputStyles } from '../styles/commonStyles';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
+
+// Stripe Card Element styles
+const cardElementStyle = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      '::placeholder': {
+        color: '#aab7c4',
+      },
+    },
+    invalid: {
+      color: '#9e2146',
+    },
+  },
+};
 
 const CheckoutForm = () => {
   const dispatch = useDispatch();
@@ -18,6 +40,9 @@ const CheckoutForm = () => {
   const { items, total } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa' or 'stripe'
+  const stripe = useStripe();
+  const elements = useElements();
   const [shippingDetails, setShippingDetails] = useState({
     name: '',
     email: '',
@@ -45,21 +70,13 @@ const CheckoutForm = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate form fields
-    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
-        !shippingDetails.address || !shippingDetails.city || !shippingDetails.state || 
-        !shippingDetails.zipCode || !shippingDetails.country) {
-      toast.error('Please fill in all shipping details.');
+  const handleStripePayment = async () => {
+    if (!stripe || !elements) {
       return;
     }
 
     setLoading(true);
     setError('');
-
-    let newOrderRef = null;
 
     try {
       // Create order first with pending status
@@ -71,69 +88,242 @@ const CheckoutForm = () => {
         paymentStatus: 'pending',
         status: 'pending',
         createdAt: serverTimestamp(),
-        isVisible: false // Hide from admin until payment is successful
+        isVisible: false,
+        paymentMethod: 'stripe'
       });
 
-      newOrderRef = orderDocRef;
       setOrderRef(orderDocRef);
 
-      // Then initiate payment using the local reference
-      const response = await fetch('https://luxecarts-mpesa.onrender.com/stkpush', {
+      // Create payment intent with improved error handling
+      const response = await fetch(process.env.REACT_APP_STRIPE_SERVER_URL + '/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Origin': window.location.origin
         },
         credentials: 'include',
         body: JSON.stringify({
-          phone: shippingDetails.phone,
-          amount: Math.round(finalTotal),
-          orderId: orderDocRef.id
-        })
+          amount: Math.round(finalTotal * 100),
+          currency: 'usd',
+          customer_email: shippingDetails.email,
+          customer_name: shippingDetails.name,
+          shipping: {
+            name: shippingDetails.name,
+            address: {
+              line1: shippingDetails.address,
+              city: shippingDetails.city,
+              state: shippingDetails.state,
+              postal_code: shippingDetails.zipCode,
+              country: shippingDetails.country
+            }
+          },
+          metadata: {
+            order_id: orderDocRef.id
+          }
+        }),
       });
 
-      const responseClone = response.clone();
-      let data;
-      
-      try {
-        data = await response.json();
-      } catch (error) {
-        const textData = await responseClone.text();
-        console.error('Failed to parse JSON:', textData);
-        throw new Error('Invalid response from server');
-      }
-
       if (!response.ok) {
-        throw new Error(data.message || 'Payment failed');
+        const errorText = await response.text();
+        console.error('Payment server error:', {
+          status: response.status,
+          statusText: response.statusText,
+          response: errorText
+        });
+        throw new Error('Unable to process payment. Please try again.');
       }
 
-      if (data.ResponseCode === "0") {
-        // Payment initiated successfully
-        toast.loading('Processing payment...', { duration: 15000 });
-        setCheckoutRequestID(data.CheckoutRequestID);
-        setShowPaymentStatus(true);
-        
-        // Start polling for payment status with the local reference
-        startPolling(data.CheckoutRequestID, orderDocRef);
-      } else {
-        throw new Error(data.ResponseDescription || 'Failed to initiate payment');
+      const data = await response.json();
+      
+      if (!data || !data.clientSecret) {
+        throw new Error('Invalid response from payment server');
       }
-      
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error(error.message || 'An error occurred during checkout. Please try again.');
-      
-      // Update order status if payment failed
-      if (newOrderRef) {
-        await updateDoc(newOrderRef, {
-          status: 'payment_failed',
-          paymentStatus: 'failed',
-          error: error.message,
-          updatedAt: serverTimestamp()
+
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: {
+            name: shippingDetails.name,
+            email: shippingDetails.email,
+            phone: shippingDetails.phone,
+            address: {
+              line1: shippingDetails.address,
+              city: shippingDetails.city,
+              state: shippingDetails.state,
+              postal_code: shippingDetails.zipCode,
+              country: shippingDetails.country
+            }
+          }
+        }
+      });
+
+      if (stripeError) {
+        console.error('Stripe error:', stripeError);
+        let errorMessage = 'Payment failed. ';
+        
+        if (stripeError.type === 'card_error') {
+          switch (stripeError.code) {
+            case 'card_declined':
+              errorMessage += 'Your card was declined.';
+              break;
+            case 'expired_card':
+              errorMessage += 'Your card has expired.';
+              break;
+            case 'incorrect_cvc':
+              errorMessage += 'The security code is incorrect.';
+              break;
+            case 'processing_error':
+              errorMessage += 'An error occurred while processing your card.';
+              break;
+            case 'insufficient_funds':
+              errorMessage += 'Your card has insufficient funds.';
+              break;
+            default:
+              errorMessage += stripeError.message || 'Please try again.';
+          }
+        } else {
+          errorMessage += 'Please check your card details and try again.';
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        await updateDoc(orderDocRef, {
+          status: 'processing',
+          paymentStatus: 'completed',
+          updatedAt: serverTimestamp(),
+          isVisible: true,
+          stripePaymentIntentId: paymentIntent.id,
+          paymentDetails: {
+            last4: paymentIntent.payment_method_details?.card?.last4,
+            brand: paymentIntent.payment_method_details?.card?.brand,
+            paymentMethodType: paymentIntent.payment_method_types?.[0]
+          }
         });
+
+        dispatch(clearCart());
+        navigate('/order-success', {
+          state: {
+            orderId: orderDocRef.id,
+            total: finalTotal,
+          }
+        });
+        toast.success('Payment successful! Order placed.');
+      } else {
+        throw new Error('Payment was not completed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Stripe payment error:', error);
+      toast.error(error.message || 'Payment failed. Please try again.');
+      
+      if (orderRef) {
+        try {
+          await updateDoc(orderRef, {
+            status: 'payment_failed',
+            paymentStatus: 'failed',
+            error: error.message,
+            updatedAt: serverTimestamp()
+          });
+        } catch (updateError) {
+          console.error('Failed to update order status:', updateError);
+        }
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate form fields
+    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
+        !shippingDetails.address || !shippingDetails.city || !shippingDetails.state || 
+        !shippingDetails.zipCode || !shippingDetails.country) {
+      toast.error('Please fill in all shipping details.');
+      return;
+    }
+
+    if (paymentMethod === 'stripe') {
+      await handleStripePayment();
+    } else {
+      setLoading(true);
+      setError('');
+
+      let newOrderRef = null;
+
+      try {
+        // Create order first with pending status
+        const orderDocRef = await addDoc(collection(db, 'orders'), {
+          userId: user.uid,
+          items,
+          total: finalTotal,
+          shippingDetails,
+          paymentStatus: 'pending',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          isVisible: false // Hide from admin until payment is successful
+        });
+
+        newOrderRef = orderDocRef;
+        setOrderRef(orderDocRef);
+
+        // Then initiate payment using the local reference
+        const response = await fetch('https://luxecarts-mpesa.onrender.com/stkpush', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            phone: shippingDetails.phone,
+            amount: Math.round(finalTotal),
+            orderId: orderDocRef.id
+          })
+        });
+
+        const responseClone = response.clone();
+        let data;
+        
+        try {
+          data = await response.json();
+        } catch (error) {
+          const textData = await responseClone.text();
+          console.error('Failed to parse JSON:', textData);
+          throw new Error('Invalid response from server');
+        }
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Payment failed');
+        }
+
+        if (data.ResponseCode === "0") {
+          // Payment initiated successfully
+          toast.loading('Processing payment...', { duration: 15000 });
+          setCheckoutRequestID(data.CheckoutRequestID);
+          setShowPaymentStatus(true);
+          
+          // Start polling for payment status with the local reference
+          startPolling(data.CheckoutRequestID, orderDocRef);
+        } else {
+          throw new Error(data.ResponseDescription || 'Failed to initiate payment');
+        }
+        
+      } catch (error) {
+        console.error('Checkout error:', error);
+        toast.error(error.message || 'An error occurred during checkout. Please try again.');
+        
+        // Update order status if payment failed
+        if (newOrderRef) {
+          await updateDoc(newOrderRef, {
+            status: 'payment_failed',
+            paymentStatus: 'failed',
+            error: error.message,
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
     }
   };
 
@@ -382,20 +572,58 @@ const CheckoutForm = () => {
           </div>
         </div>
 
-        {/* Payment Section */}
+        {/* Payment Section - Modified to include payment method selection */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
             <FiLock className="mr-2" /> Payment Information
           </h3>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Payment will be processed via M-Pesa. You will receive a prompt on your phone to complete the payment.
-            </p>
-            <div className="bg-green-50 p-4 rounded-md">
-              <p className="text-sm text-green-700">
-                Make sure your M-Pesa number {shippingDetails.phone} is correct and has sufficient funds.
-              </p>
+            <div className="flex space-x-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('mpesa')}
+                className={`flex-1 py-2 px-4 rounded-md ${
+                  paymentMethod === 'mpesa'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                M-Pesa
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('stripe')}
+                className={`flex-1 py-2 px-4 rounded-md ${
+                  paymentMethod === 'stripe'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                Credit Card
+              </button>
             </div>
+
+            {paymentMethod === 'mpesa' ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Payment will be processed via M-Pesa. You will receive a prompt on your phone to complete the payment.
+                </p>
+                <div className="bg-green-50 p-4 rounded-md">
+                  <p className="text-sm text-green-700">
+                    Make sure your M-Pesa number {shippingDetails.phone} is correct and has sufficient funds.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 border rounded-md">
+                  <CardElement options={cardElementStyle} />
+                </div>
+                <p className="text-sm text-gray-600">
+                  Your card will be charged securely through Stripe.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -448,10 +676,14 @@ const CheckoutForm = () => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (paymentMethod === 'stripe' && !stripe)}
           className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Processing...' : `Pay KES ${finalTotal.toFixed(2)} with M-Pesa`}
+          {loading
+            ? 'Processing...'
+            : paymentMethod === 'mpesa'
+            ? `Pay KES ${finalTotal.toFixed(2)} with M-Pesa`
+            : `Pay $${finalTotal.toFixed(2)} with Card`}
         </button>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -476,7 +708,9 @@ const Checkout = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl font-bold mb-8">Checkout</h1>
-        <CheckoutForm />
+        <Elements stripe={stripePromise}>
+          <CheckoutForm />
+        </Elements>
       </motion.div>
     </div>
   );
