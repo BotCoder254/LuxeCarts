@@ -7,6 +7,7 @@ import { collection, onSnapshot, query, where, doc, getDoc } from 'firebase/fire
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase/config';
 import { refreshProducts } from './store/slices/productSlice';
+import { setupInteractionTracking } from './utils/trackInteraction';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -32,6 +33,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Favorites from './pages/Favorites';
 import UserProfile from './pages/UserProfile';
 import AdminOrderDetails from './pages/AdminOrderDetails';
+import UserAnalytics from './pages/UserAnalytics';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -70,6 +72,17 @@ function App() {
       }
     }
   }, [user, isAdmin, navigate, location]);
+
+  useEffect(() => {
+    // Set up interaction tracking
+    let cleanup;
+    if (user?.uid) {
+      cleanup = setupInteractionTracking(user.uid);
+    }
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [user]);
 
   useEffect(() => {
     // Set up real-time listener for product changes
@@ -195,6 +208,16 @@ function App() {
             element={
               <PrivateRoute>
                 <UserProfile />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Analytics Route */}
+          <Route
+            path="/analytics"
+            element={
+              <PrivateRoute>
+                <UserAnalytics />
               </PrivateRoute>
             }
           />

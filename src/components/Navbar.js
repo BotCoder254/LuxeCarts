@@ -236,6 +236,12 @@ const Navbar = () => {
                         >
                           Orders
                         </Link>
+                        <Link
+                          to="/analytics"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                        >
+                          Analytics
+                        </Link>
                         <button
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
@@ -478,4 +484,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;
