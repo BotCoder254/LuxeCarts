@@ -11,18 +11,25 @@ const combinedReducer = {
   favorites: favoriteReducer,
 };
 
-const rootReducer = (state, action) => {
+// Create a root reducer that handles logout
+const createRootReducer = (reducers) => (state, action) => {
   if (action.type === 'auth/logoutUser/fulfilled') {
     // Reset all slices to their initial states
-    state = {};
+    state = undefined;
   }
-  return combinedReducer;
+  return reducers(state, action);
 };
 
 export const store = configureStore({
-  reducer: combinedReducer,
+  reducer: createRootReducer((state, action) => {
+    const newState = {};
+    for (const [key, reducer] of Object.entries(combinedReducer)) {
+      newState[key] = reducer(state?.[key], action);
+    }
+    return newState;
+  }),
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
     }),
-}); 
+});

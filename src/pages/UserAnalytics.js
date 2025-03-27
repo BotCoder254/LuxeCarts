@@ -81,7 +81,7 @@ const UserAnalytics = () => {
       className="container mx-auto px-4 py-8"
     >
       {/* Header */}
-      <div className="flex items-center space-x-4 mb-8">
+      <div className="flex items-center space-x-4 mb-8 pt-12">
         <div className="p-3 bg-indigo-100 rounded-full">
           <FiActivity className="w-6 h-6 text-indigo-600" />
         </div>

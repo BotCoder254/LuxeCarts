@@ -6,7 +6,7 @@ import { selectIsAdmin, setUser } from './store/slices/authSlice';
 import { collection, onSnapshot, query, where, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase/config';
-import { refreshProducts } from './store/slices/productSlice';
+import { refreshProducts, updateProductStock } from './store/slices/productSlice';
 import { setupInteractionTracking } from './utils/trackInteraction';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -34,6 +34,7 @@ import Favorites from './pages/Favorites';
 import UserProfile from './pages/UserProfile';
 import AdminOrderDetails from './pages/AdminOrderDetails';
 import UserAnalytics from './pages/UserAnalytics';
+import InventoryAlerts from './components/admin/InventoryAlerts';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -93,8 +94,16 @@ function App() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
-        if (change.type === "added" || change.type === "modified" || change.type === "removed") {
-          // Refresh products in Redux store
+        const product = { id: change.doc.id, ...change.doc.data() };
+        
+        if (change.type === "modified") {
+          // Update product stock in real-time
+          dispatch(updateProductStock({ 
+            productId: product.id, 
+            stock: product.stock 
+          }));
+        } else if (change.type === "added" || change.type === "removed") {
+          // Refresh all products
           dispatch(refreshProducts());
         }
       });
@@ -106,6 +115,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <Toaster position="top-right" />
       <ErrorBoundary>
         <Routes>
           {/* Public Routes */}
@@ -186,9 +196,28 @@ function App() {
                     <Route path="orders/:orderId" element={<AdminOrderDetails />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="profile" element={<UserProfile isAdmin={true} />} />
+                    <Route path="inventory" element={<InventoryAlerts />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
+            }
+          />
+
+          {/* User Profile and Analytics Routes */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <UserProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <PrivateRoute>
+                <UserAnalytics />
+              </PrivateRoute>
             }
           />
 
@@ -202,31 +231,10 @@ function App() {
             }
           />
 
-          {/* Regular User Profile Route */}
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <UserProfile />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Analytics Route */}
-          <Route
-            path="/analytics"
-            element={
-              <PrivateRoute>
-                <UserAnalytics />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Catch all route - 404 */}
+          {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>
-      <Toaster position="top-center" />
     </div>
   );
 }

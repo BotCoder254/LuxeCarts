@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser, selectIsAdmin } from '../store/slices/authSlice';
-import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid } from 'react-icons/fi';
+import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid, FiPackage } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -117,17 +117,32 @@ const Navbar = () => {
                       Admin
                     </button>
                     <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                      <div className="py-1">
+                      <div className="py-1 space-y-2">
                         <Link
                           to="/admin"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                          className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg ${
+                            location.pathname === '/admin' ? 'bg-gray-100' : ''
+                          }`}
                         >
+                          <FiGrid className="w-5 h-5 mr-3" />
                           Dashboard
                         </Link>
                         <Link
-                          to="/admin/products"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                          to="/admin/inventory"
+                          className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg ${
+                            location.pathname === '/admin/inventory' ? 'bg-gray-100' : ''
+                          }`}
                         >
+                          <FiPackage className="w-5 h-5 mr-3" />
+                          Inventory
+                        </Link>
+                        <Link
+                          to="/admin/products"
+                          className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg ${
+                            location.pathname.startsWith('/admin/products') ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <FiShoppingBag className="w-5 h-5 mr-3" />
                           Products
                         </Link>
                         <Link

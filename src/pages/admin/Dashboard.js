@@ -6,6 +6,8 @@ import { FiPackage, FiShoppingBag, FiUsers, FiDollarSign } from 'react-icons/fi'
 import { motion } from 'framer-motion';
 import moment from 'moment';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
+import AdminLayout from '../../components/AdminLayout';
+import InventoryAlerts from '../../components/admin/InventoryAlerts';
 
 const DashboardCard = ({ title, value, icon, link }) => (
   <Link
@@ -99,99 +101,116 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <DashboardCard
-          title="Total Products"
-          value={stats.products}
-          icon={<FiPackage />}
-          link="/admin/products"
-        />
-        <DashboardCard
-          title="Total Orders"
-          value={stats.orders}
-          icon={<FiShoppingBag />}
-          link="/admin/orders"
-        />
-        <DashboardCard
-          title="Total Users"
-          value={stats.users}
-          icon={<FiUsers />}
-          link="/admin/users"
-        />
-        <DashboardCard
-          title="Total Revenue"
-          value={`$${stats.revenue.toFixed(2)}`}
-          icon={<FiDollarSign />}
-          link="/admin/orders"
-        />
-      </div>
+    <AdminLayout>
+      <div className="py-6 pr-14">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
+          {/* Inventory Alerts Section */}
+          <div className="lg:col-span-2">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Inventory Alerts</h2>
+            <InventoryAlerts />
+          </div>
 
-      {/* Analytics Section */}
-      <AdminAnalytics 
-        orders={allOrders}
-        users={allUsers}
-        products={allProducts}
-      />
+          {/* Analytics Section */}
+          <div className="lg:col-span-2">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Analytics Overview</h2>
+            <AdminAnalytics 
+              orders={allOrders}
+              users={allUsers}
+              products={allProducts}
+            />
+          </div>
 
-      {/* Recent Orders */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Recent Orders</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {recentOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                    <Link to={`/admin/orders/${order.id}`}>{order.id.slice(0, 8)}...</Link>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.shippingAddress?.name || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${order.total.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
-                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                      'bg-yellow-100 text-yellow-800'}`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {moment(order.createdAt).format('MMM DD, YYYY')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          {/* Stats Cards */}
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <DashboardCard
+              title="Total Products"
+              value={stats.products}
+              icon={<FiPackage />}
+              link="/admin/products"
+            />
+            <DashboardCard
+              title="Total Orders"
+              value={stats.orders}
+              icon={<FiShoppingBag />}
+              link="/admin/orders"
+            />
+            <DashboardCard
+              title="Total Users"
+              value={stats.users}
+              icon={<FiUsers />}
+              link="/admin/users"
+            />
+            <DashboardCard
+              title="Total Revenue"
+              value={`$${stats.revenue.toFixed(2)}`}
+              icon={<FiDollarSign />}
+              link="/admin/orders"
+            />
+          </div>
+
+          {/* Recent Orders */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800">Recent Orders</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Order ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                        <Link to={`/admin/orders/${order.id}`}>{order.id.slice(0, 8)}...</Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {order.shippingAddress?.name || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${order.total.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'}`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {moment(order.createdAt).format('MMM DD, YYYY')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
