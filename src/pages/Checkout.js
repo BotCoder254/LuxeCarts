@@ -269,13 +269,11 @@ const CheckoutForm = () => {
         setOrderRef(orderDocRef);
 
         // Then initiate payment using the local reference
-        const response = await fetch('https://luxecarts-mpesa.onrender.com/stkpush', {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/stkpush`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             phone: shippingDetails.phone,
             amount: Math.round(finalTotal),
@@ -336,13 +334,11 @@ const CheckoutForm = () => {
     // Set up new polling interval
     const interval = setInterval(async () => {
       try {
-        const response = await fetch("https://luxecarts-mpesa.onrender.com/query", {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/query`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json"
           },
-          credentials: 'include',
           body: JSON.stringify({
             queryCode: checkoutRequestID
           }),
