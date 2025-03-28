@@ -19,7 +19,7 @@ const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
 
 // Add M-Pesa server URL constant
-const MPESA_SERVER_URL = process.env.REACT_APP_MPESA_SERVER_URL || 'http://localhost:8000';
+const MPESA_SERVER_URL = process.env.REACT_APP_MPESA_SERVER_URL || 'https://luxecarts-mpesa.onrender.com'; // Ensure this URL is correct 
 
 // Stripe Card Element styles
 const cardElementStyle = {
