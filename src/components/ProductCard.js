@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/slices/cartSlice';
 import { addToFavorites, removeFromFavorites } from '../store/slices/favoriteSlice';
-import { FiShoppingCart, FiHeart } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiTag, FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,44 @@ const ProductCard = ({ product }) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const isPreview = searchParams.get('preview') === 'true';
+  const { rules } = useSelector((state) => state.pricing);
+
+  // Calculate active discounts
+  const getActiveDiscounts = () => {
+    if (!rules) return { finalPrice: product.price, activeRules: [] };
+
+    let finalPrice = product.price;
+    const activeRules = [];
+
+    rules.forEach(rule => {
+      if (!rule.isActive) return;
+
+      // Check time-limited sales
+      if (rule.type === 'sale') {
+        const now = new Date();
+        const start = rule.startDate ? new Date(rule.startDate) : null;
+        const end = rule.endDate ? new Date(rule.endDate) : null;
+
+        if ((!start || now >= start) && (!end || now <= end)) {
+          const discount = rule.discountType === 'percentage' 
+            ? finalPrice * (rule.discountValue / 100)
+            : rule.discountValue;
+          finalPrice -= discount;
+          activeRules.push(rule);
+        }
+      }
+
+      // Show bulk discount badge if available
+      if (rule.type === 'bulk') {
+        activeRules.push(rule);
+      }
+    });
+
+    return { finalPrice: Math.max(0, finalPrice), activeRules };
+  };
+
+  const { finalPrice, activeRules } = getActiveDiscounts();
+  const hasDiscount = finalPrice < product.price;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -40,10 +78,6 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  const discount = product.compareAtPrice 
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-    : 0;
-
   return (
     <motion.div
       layout
@@ -63,9 +97,34 @@ const ProductCard = ({ product }) => {
             alt={product.name}
             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
           />
-          {discount > 0 && (
-            <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium">
-              {discount}% OFF
+          {activeRules.length > 0 && (
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              {activeRules.map((rule, index) => (
+                <motion.div
+                  key={rule.id}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-full text-xs shadow-md"
+                >
+                  {rule.type === 'bulk' && (
+                    <>
+                      <FiTag className="w-3 h-3" />
+                      <span>{rule.discountValue}% bulk discount</span>
+                    </>
+                  )}
+                  {rule.type === 'sale' && (
+                    <>
+                      <FiClock className="w-3 h-3" />
+                      <span>Sale!</span>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+          {hasDiscount && (
+            <span className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium">
+              {Math.round(((product.price - finalPrice) / product.price) * 100)}% OFF
             </span>
           )}
           {product.stock <= product.stockThreshold && (
@@ -86,11 +145,11 @@ const ProductCard = ({ product }) => {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xl font-bold text-gray-900">
-                ${product.price.toFixed(2)}
+                ${finalPrice.toFixed(2)}
               </span>
-              {product.compareAtPrice && (
+              {hasDiscount && (
                 <span className="text-sm text-gray-500 line-through">
-                  ${product.compareAtPrice.toFixed(2)}
+                  ${product.price.toFixed(2)}
                 </span>
               )}
             </div>

@@ -36,6 +36,7 @@ import AdminOrderDetails from './pages/AdminOrderDetails';
 import UserAnalytics from './pages/UserAnalytics';
 import InventoryAlerts from './components/admin/InventoryAlerts';
 import SecurityDashboard from './pages/admin/SecurityDashboard';
+import PricingRules from './pages/admin/PricingRules';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -199,6 +200,7 @@ function App() {
                     <Route path="profile" element={<UserProfile isAdmin={true} />} />
                     <Route path="inventory" element={<InventoryAlerts />} />
                     <Route path="security" element={<SecurityDashboard />} />
+                    <Route path="pricing" element={<PricingRules />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
