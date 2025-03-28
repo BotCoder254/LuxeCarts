@@ -18,6 +18,9 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
 
+// Add M-Pesa server URL constant
+const MPESA_SERVER_URL = process.env.REACT_APP_MPESA_SERVER_URL || 'http://localhost:8000';
+
 // Stripe Card Element styles
 const cardElementStyle = {
   style: {
@@ -262,20 +265,19 @@ const CheckoutForm = () => {
           paymentStatus: 'pending',
           status: 'pending',
           createdAt: serverTimestamp(),
-          isVisible: false // Hide from admin until payment is successful
+          isVisible: false,
+          paymentMethod: 'mpesa'
         });
 
         newOrderRef = orderDocRef;
         setOrderRef(orderDocRef);
 
-        // Then initiate payment using the local reference
-        const response = await fetch('https://luxecarts-mpesa.onrender.com/stkpush', {
+        // Use the MPESA_SERVER_URL constant
+        const response = await fetch(`${MPESA_SERVER_URL}/stkpush`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             phone: shippingDetails.phone,
             amount: Math.round(finalTotal),
@@ -283,28 +285,25 @@ const CheckoutForm = () => {
           })
         });
 
-        const responseClone = response.clone();
-        let data;
-        
-        try {
-          data = await response.json();
-        } catch (error) {
-          const textData = await responseClone.text();
-          console.error('Failed to parse JSON:', textData);
-          throw new Error('Invalid response from server');
-        }
-
         if (!response.ok) {
-          throw new Error(data.message || 'Payment failed');
+          const errorText = await response.text();
+          console.error('M-Pesa server error:', {
+            status: response.status,
+            statusText: response.statusText,
+            response: errorText
+          });
+          throw new Error('Unable to process M-Pesa payment. Please try again.');
         }
 
+        const data = await response.json();
+        
         if (data.ResponseCode === "0") {
           // Payment initiated successfully
           toast.loading('Processing payment...', { duration: 15000 });
           setCheckoutRequestID(data.CheckoutRequestID);
           setShowPaymentStatus(true);
           
-          // Start polling for payment status with the local reference
+          // Start polling for payment status
           startPolling(data.CheckoutRequestID, orderDocRef);
         } else {
           throw new Error(data.ResponseDescription || 'Failed to initiate payment');
@@ -336,13 +335,12 @@ const CheckoutForm = () => {
     // Set up new polling interval
     const interval = setInterval(async () => {
       try {
-        const response = await fetch("https://luxecarts-mpesa.onrender.com/query", {
+        // Use the MPESA_SERVER_URL constant
+        const response = await fetch(`${MPESA_SERVER_URL}/query`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json"
           },
-          credentials: 'include',
           body: JSON.stringify({
             queryCode: checkoutRequestID
           }),
