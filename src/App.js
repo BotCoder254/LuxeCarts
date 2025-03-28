@@ -35,6 +35,7 @@ import UserProfile from './pages/UserProfile';
 import AdminOrderDetails from './pages/AdminOrderDetails';
 import UserAnalytics from './pages/UserAnalytics';
 import InventoryAlerts from './components/admin/InventoryAlerts';
+import SecurityDashboard from './pages/admin/SecurityDashboard';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -197,6 +198,7 @@ function App() {
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="profile" element={<UserProfile isAdmin={true} />} />
                     <Route path="inventory" element={<InventoryAlerts />} />
+                    <Route path="security" element={<SecurityDashboard />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
