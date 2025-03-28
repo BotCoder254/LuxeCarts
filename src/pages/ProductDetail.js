@@ -10,15 +10,13 @@ import { db } from '../firebase/config';
 
 import { addToCart } from '../store/slices/cartSlice';
 
-import { FiShoppingCart, FiHeart, FiShare2, FiTruck, FiShield, FiPackage } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiShare2, FiTruck, FiShield, FiPackage, FiTag, FiClock, FiMapPin } from 'react-icons/fi';
 
 import { ThreeDots } from 'react-loader-spinner';
 
 import { motion } from 'framer-motion';
 
 import toast from 'react-hot-toast';
-
-
 
 const ProductDetail = () => {
 
@@ -30,25 +28,31 @@ const ProductDetail = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const [selectedImage, setSelectedImage] = useState(0);
+  const { rules } = useSelector((state) => state.pricing);
 
-  const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   const [selectedSize, setSelectedSize] = useState('');
 
   const [selectedColor, setSelectedColor] = useState('');
 
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [quantity, setQuantity] = useState(1);
 
   const [isInWishlist, setIsInWishlist] = useState(false);
+
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const [hasRated, setHasRated] = useState(false);
 
   const [userRating, setUserRating] = useState(0);
 
+  const [userLocation, setUserLocation] = useState(null);
+
   const { user } = useSelector((state) => state.auth);
 
+  const [discountedPrice, setDiscountedPrice] = useState(0);
 
+  const [activeRules, setActiveRules] = useState([]);
 
   const features = [
 
@@ -84,8 +88,6 @@ const ProductDetail = () => {
 
   ];
 
-
-
   useEffect(() => {
 
     const fetchProduct = async () => {
@@ -118,13 +120,9 @@ const ProductDetail = () => {
 
     };
 
-
-
     fetchProduct();
 
   }, [id]);
-
-
 
   const fetchRelatedProducts = async (category) => {
 
@@ -158,7 +156,69 @@ const ProductDetail = () => {
 
   };
 
+  useEffect(() => {
 
+    // Get user location for location-based pricing
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => console.log('Location error:', error)
+      );
+    }
+
+  }, []);
+
+  useEffect(() => {
+    if (product && rules) {
+      let finalPrice = product.price;
+      const currentRules = [];
+
+      rules.forEach(rule => {
+        if (!rule.isActive) return;
+
+        // Check time-limited sales
+        if (rule.type === 'sale') {
+          const now = new Date();
+          const start = rule.startDate ? new Date(rule.startDate) : null;
+          const end = rule.endDate ? new Date(rule.endDate) : null;
+
+          if ((!start || now >= start) && (!end || now <= end)) {
+            const discount = rule.discountType === 'percentage' 
+              ? finalPrice * (rule.discountValue / 100)
+              : rule.discountValue;
+            finalPrice -= discount;
+            currentRules.push(rule);
+          }
+        }
+
+        // Check bulk discounts
+        if (rule.type === 'bulk' && quantity >= rule.minQuantity) {
+          const discount = rule.discountType === 'percentage'
+            ? finalPrice * (rule.discountValue / 100)
+            : rule.discountValue;
+          finalPrice -= discount;
+          currentRules.push(rule);
+        }
+
+        // Check location-based pricing
+        if (rule.type === 'location' && userLocation && rule.regions.includes(userLocation.region)) {
+          const adjustment = rule.adjustmentType === 'percentage'
+            ? finalPrice * (rule.adjustmentValue / 100)
+            : rule.adjustmentValue;
+          finalPrice += adjustment;
+          currentRules.push(rule);
+        }
+      });
+
+      setDiscountedPrice(Math.max(0, finalPrice));
+      setActiveRules(currentRules);
+    }
+  }, [product, rules, quantity, userLocation]);
 
   const handleAddToCart = () => {
 
@@ -178,8 +238,6 @@ const ProductDetail = () => {
 
     }
 
-
-
     dispatch(addToCart({
 
       ...product,
@@ -196,8 +254,6 @@ const ProductDetail = () => {
 
   };
 
-
-
   const handleWishlist = async () => {
 
     if (!user) {
@@ -208,15 +264,11 @@ const ProductDetail = () => {
 
     }
 
-
-
     try {
 
       const userRef = doc(db, 'users', user.uid);
 
       const productRef = doc(db, 'products', id);
-
-
 
       if (isInWishlist) {
 
@@ -254,8 +306,6 @@ const ProductDetail = () => {
 
   };
 
-
-
   const handleRating = async (rating) => {
 
     if (!user) {
@@ -266,8 +316,6 @@ const ProductDetail = () => {
 
     }
 
-
-
     if (hasRated) {
 
       toast.error('You have already rated this product');
@@ -275,8 +323,6 @@ const ProductDetail = () => {
       return;
 
     }
-
-
 
     try {
 
@@ -286,11 +332,7 @@ const ProductDetail = () => {
 
       const totalRatings = product.totalRatings || 0;
 
-      
-
       const newRating = ((currentRating * totalRatings) + rating) / (totalRatings + 1);
-
-
 
       await updateDoc(productRef, {
 
@@ -301,8 +343,6 @@ const ProductDetail = () => {
         [`ratings.${user.uid}`]: rating
 
       });
-
-
 
       setUserRating(rating);
 
@@ -319,8 +359,6 @@ const ProductDetail = () => {
     }
 
   };
-
-
 
   useEffect(() => {
 
@@ -342,8 +380,6 @@ const ProductDetail = () => {
 
         }
 
-
-
         // Check if user has rated
 
         if (product.ratings && product.ratings[user.uid]) {
@@ -358,13 +394,9 @@ const ProductDetail = () => {
 
     };
 
-
-
     checkUserInteractions();
 
   }, [user, product, id]);
-
-
 
   if (loading) {
 
@@ -380,8 +412,6 @@ const ProductDetail = () => {
 
   }
 
-
-
   if (!product) {
 
     return (
@@ -395,8 +425,6 @@ const ProductDetail = () => {
     );
 
   }
-
-
 
   return (
 
@@ -492,8 +520,6 @@ const ProductDetail = () => {
 
           </div>
 
-
-
           {/* Product Info */}
 
           <div className="lg:pl-8">
@@ -556,25 +582,44 @@ const ProductDetail = () => {
 
               </div>
 
-              <p className="text-3xl font-bold text-gray-900 mb-6">
-
-                ${product.price.toFixed(2)}
-
-                {product.oldPrice && (
-
-                  <span className="ml-2 text-lg text-gray-500 line-through">
-
-                    ${product.oldPrice.toFixed(2)}
-
+              <div className="flex flex-col space-y-4 mt-6">
+                {/* Price display with discounts */}
+                <div className="flex items-center space-x-4">
+                  <span className="text-3xl font-bold text-gray-900">
+                    ${discountedPrice.toFixed(2)}
                   </span>
+                  {discountedPrice < product?.price && (
+                    <span className="text-xl text-gray-500 line-through">
+                      ${product?.price?.toFixed(2)}
+                    </span>
+                  )}
+                </div>
 
+                {/* Active discount badges */}
+                {activeRules.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {activeRules.map((rule) => (
+                      <motion.div
+                        key={rule.id}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      >
+                        {rule.type === 'bulk' && <FiTag className="w-4 h-4" />}
+                        {rule.type === 'sale' && <FiClock className="w-4 h-4" />}
+                        {rule.type === 'location' && <FiMapPin className="w-4 h-4" />}
+                        <span>{rule.name}</span>
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 )}
-
-              </p>
+              </div>
 
               <p className="text-gray-600 mb-6">{product.description}</p>
-
-
 
               {/* Size Selector */}
 
@@ -618,8 +663,6 @@ const ProductDetail = () => {
 
               )}
 
-
-
               {/* Color Selector */}
 
               {product.colors && product.colors.length > 0 && (
@@ -660,8 +703,6 @@ const ProductDetail = () => {
 
               )}
 
-
-
               {/* Quantity Selector */}
 
               <div className="mb-6">
@@ -692,8 +733,6 @@ const ProductDetail = () => {
 
               </div>
 
-
-
               {/* Add to Cart Button */}
 
               <button
@@ -709,8 +748,6 @@ const ProductDetail = () => {
                 <span>Add to Cart</span>
 
               </button>
-
-
 
               {/* Share Button */}
 
@@ -735,8 +772,6 @@ const ProductDetail = () => {
               </button>
 
             </div>
-
-
 
             {/* Product Features */}
 
@@ -777,8 +812,6 @@ const ProductDetail = () => {
           </div>
 
         </div>
-
-
 
         {/* Related Products with enhanced details */}
 
@@ -944,6 +977,4 @@ const ProductDetail = () => {
 
 };
 
-
-
-export default ProductDetail; 
+export default ProductDetail;

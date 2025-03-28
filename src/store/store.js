@@ -4,6 +4,7 @@ import cartReducer from './slices/cartSlice';
 import authReducer from './slices/authSlice';
 import favoriteReducer from './slices/favoriteSlice';
 import securityReducer from './slices/securitySlice';
+import pricingReducer from './slices/pricingSlice';
 
 const combinedReducer = {
   products: productReducer,
@@ -11,6 +12,7 @@ const combinedReducer = {
   auth: authReducer,
   favorites: favoriteReducer,
   security: securityReducer,
+  pricing: pricingReducer,
 };
 
 // Create a root reducer that handles logout

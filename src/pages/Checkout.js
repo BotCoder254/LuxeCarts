@@ -12,7 +12,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Initialize Stripe
+// Initialize Stripe with proper error handling
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const SHIPPING_COST = 0;
@@ -75,6 +75,7 @@ const CheckoutForm = () => {
 
   const handleStripePayment = async () => {
     if (!stripe || !elements) {
+      toast.error('Stripe is not properly initialized. Please try again.');
       return;
     }
 
@@ -97,58 +98,32 @@ const CheckoutForm = () => {
 
       setOrderRef(orderDocRef);
 
-      // Create payment intent with improved error handling
-      const response = await fetch(process.env.REACT_APP_STRIPE_SERVER_URL + '/create-payment-intent', {
+      // Create payment intent directly using Stripe Elements
+      const { error: backendError, clientSecret } = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': window.location.origin
         },
-        credentials: 'include',
         body: JSON.stringify({
           amount: Math.round(finalTotal * 100),
           currency: 'usd',
-          customer_email: shippingDetails.email,
-          customer_name: shippingDetails.name,
-          shipping: {
-            name: shippingDetails.name,
-            address: {
-              line1: shippingDetails.address,
-              city: shippingDetails.city,
-              state: shippingDetails.state,
-              postal_code: shippingDetails.zipCode,
-              country: shippingDetails.country
-            }
-          },
           metadata: {
-            order_id: orderDocRef.id
+            orderId: orderDocRef.id
           }
         }),
-      });
+      }).then(r => r.json());
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Payment server error:', {
-          status: response.status,
-          statusText: response.statusText,
-          response: errorText
-        });
-        throw new Error('Unable to process payment. Please try again.');
+      if (backendError) {
+        throw new Error(backendError.message);
       }
 
-      const data = await response.json();
-      
-      if (!data || !data.clientSecret) {
-        throw new Error('Invalid response from payment server');
-      }
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+      // Confirm card payment
+      const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
           billing_details: {
             name: shippingDetails.name,
             email: shippingDetails.email,
-            phone: shippingDetails.phone,
             address: {
               line1: shippingDetails.address,
               city: shippingDetails.city,
@@ -160,34 +135,8 @@ const CheckoutForm = () => {
         }
       });
 
-      if (stripeError) {
-        console.error('Stripe error:', stripeError);
-        let errorMessage = 'Payment failed. ';
-        
-        if (stripeError.type === 'card_error') {
-          switch (stripeError.code) {
-            case 'card_declined':
-              errorMessage += 'Your card was declined.';
-              break;
-            case 'expired_card':
-              errorMessage += 'Your card has expired.';
-              break;
-            case 'incorrect_cvc':
-              errorMessage += 'The security code is incorrect.';
-              break;
-            case 'processing_error':
-              errorMessage += 'An error occurred while processing your card.';
-              break;
-            case 'insufficient_funds':
-              errorMessage += 'Your card has insufficient funds.';
-              break;
-            default:
-              errorMessage += stripeError.message || 'Please try again.';
-          }
-        } else {
-          errorMessage += 'Please check your card details and try again.';
-        }
-        throw new Error(errorMessage);
+      if (paymentError) {
+        throw new Error(paymentError.message);
       }
 
       if (paymentIntent.status === 'succeeded') {
@@ -198,9 +147,8 @@ const CheckoutForm = () => {
           isVisible: true,
           stripePaymentIntentId: paymentIntent.id,
           paymentDetails: {
-            last4: paymentIntent.payment_method_details?.card?.last4,
-            brand: paymentIntent.payment_method_details?.card?.brand,
-            paymentMethodType: paymentIntent.payment_method_types?.[0]
+            last4: paymentIntent.payment_method?.card?.last4,
+            brand: paymentIntent.payment_method?.card?.brand
           }
         });
 
@@ -208,12 +156,10 @@ const CheckoutForm = () => {
         navigate('/order-success', {
           state: {
             orderId: orderDocRef.id,
-            total: finalTotal,
+            total: finalTotal
           }
         });
         toast.success('Payment successful! Order placed.');
-      } else {
-        throw new Error('Payment was not completed. Please try again.');
       }
     } catch (error) {
       console.error('Stripe payment error:', error);
