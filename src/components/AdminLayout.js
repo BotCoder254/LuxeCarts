@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag } from 'react-icons/fi';
+import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -19,6 +19,7 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/orders', icon: <FiShoppingBag className="w-6 h-6" />, label: 'Orders' },
     { path: '/admin/users', icon: <FiUsers className="w-6 h-6" />, label: 'Users' },
     { path: '/admin/inventory', icon: <FiPackage className="w-6 h-6" />, label: 'Inventory' },
+    { path: '/admin/banners', icon: <FiImage className="w-6 h-6" />, label: 'Banner Manager' },
     { path: '/admin/security', icon: <FiShield className="w-6 h-6" />, label: 'Security' },
     { path: '/admin/pricing', icon: <FiTag className="w-6 h-6" />, label: 'Pricing Rules' },
     { path: '/admin/profile', icon: <FiUser className="w-6 h-6" />, label: 'Profile' },
@@ -129,9 +130,9 @@ const AdminLayout = ({ children }) => {
       <main
         className={`transition-all duration-300 ease-in-out ${
           isMobile ? 'pt-16' : 'pt-8'
-        } lg:ml-64 min-h-screen `}
+        } lg:ml-64 min-h-screen`}
       >
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 ">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {children}
         </div>
       </main>

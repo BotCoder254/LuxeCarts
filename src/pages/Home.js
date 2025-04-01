@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { m as motion } from 'framer-motion';
 import { FiShoppingBag, FiTruck, FiCreditCard, FiShield, FiStar, FiArrowRight } from 'react-icons/fi';
 import FeaturedProducts from '../components/FeaturedProducts';
+import SlidingBanner from '../components/SlidingBanner';
 import { toast } from 'react-hot-toast';
 
 const features = [
@@ -144,11 +145,7 @@ const Home = () => {
           </div>
         )}
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8"
-            alt="Hero"
-            className="w-full h-full object-cover mix-blend-overlay"
-          />
+          <SlidingBanner />
         </div>
         <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 h-full flex items-center">
           <motion.div

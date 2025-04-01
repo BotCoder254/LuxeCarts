@@ -102,7 +102,7 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="py-6 pr-14">
+      <div className="py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
