@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   query,
   where,
+  orderBy,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../firebase/config';
@@ -35,6 +36,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
       tags: [],
       brand: '',
       specifications: {},
+      features: [],
     }
   );
   const [imageFiles, setImageFiles] = useState([]);
@@ -70,6 +72,17 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
         [key]: value,
       },
     });
+  };
+
+  const handleFeatureChange = (index, value) => {
+    const newFeatures = [...(formData.features || [])];
+    newFeatures[index] = value;
+    setFormData({ ...formData, features: newFeatures });
+  };
+
+  const removeFeature = (index) => {
+    const newFeatures = (formData.features || []).filter((_, i) => i !== index);
+    setFormData({ ...formData, features: newFeatures });
   };
 
   const handleSubmit = async (e) => {
@@ -109,7 +122,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -118,7 +131,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -128,7 +141,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
             <option value="">Select Category</option>
             {categories.map((category) => (
@@ -147,7 +160,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -158,7 +171,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.stock}
             onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -169,7 +182,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.sizes.join(', ')}
             onChange={handleSizeChange}
             placeholder="S, M, L, XL"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -180,7 +193,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.colors.join(', ')}
             onChange={handleColorChange}
             placeholder="Red, Blue, Green"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -192,7 +205,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             max="100"
             value={formData.discount}
             onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -203,7 +216,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             rows={6}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
           />
         </div>
 
@@ -268,7 +281,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.tags.join(', ')}
             onChange={handleTagsChange}
             placeholder="e.g., wireless, bluetooth, electronics"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -278,7 +291,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             type="text"
             value={formData.brand}
             onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -329,6 +342,75 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             </button>
           </div>
         </div>
+
+        {/* Features */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Product Features</label>
+          {(formData.features || []).map((feature, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={feature}
+                onChange={(e) => handleFeatureChange(index, e.target.value)}
+                className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Enter a feature"
+              />
+              <button
+                type="button"
+                onClick={() => removeFeature(index)}
+                className="p-2 text-red-600 hover:text-red-800"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const newFeatures = formData.features || [];
+              setFormData({
+                ...formData,
+                features: [...newFeatures, '']
+              });
+            }}
+            className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            <FiPlus className="w-4 h-4 mr-2" /> Add Feature
+          </button>
+        </div>
+
+        {/* Product Images */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Product Images
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {(formData.images || []).map((image, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={image}
+                  alt={`Product ${index + 1}`}
+                  className="h-24 w-full object-cover rounded-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder-product.jpg';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newImages = [...formData.images];
+                    newImages.splice(index, 1);
+                    setFormData({ ...formData, images: newImages });
+                  }}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end space-x-4 pt-4">
@@ -375,16 +457,19 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'products'));
+      const productsRef = collection(db, 'products');
+      const q = query(productsRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
       const productsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        images: doc.data().images || [] // Ensure images is initialized
       }));
       setProducts(productsData);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast.error('Error loading products');
-    } finally {
+      toast.error('Failed to fetch products');
       setLoading(false);
     }
   };
@@ -394,10 +479,17 @@ const AdminProducts = () => {
       try {
         // Delete product images from storage first
         const product = products.find(p => p.id === productId);
-        if (product.images) {
+        if (product?.images?.length > 0) {
           for (const imageUrl of product.images) {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
+            try {
+              // Extract the storage path from the URL
+              const imagePath = decodeURIComponent(imageUrl.split('/o/')[1].split('?')[0]);
+              const imageRef = ref(storage, imagePath);
+              await deleteObject(imageRef);
+            } catch (imageError) {
+              console.error('Error deleting image:', imageError);
+              // Continue with other images even if one fails
+            }
           }
         }
 
@@ -576,12 +668,12 @@ const AdminProducts = () => {
           placeholder="Search products..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         >
           <option value="">All Categories</option>
           {['Electronics', 'Fashion', 'Home', 'Beauty', 'Sports'].map((category) => (
@@ -593,7 +685,7 @@ const AdminProducts = () => {
         <select
           value={advancedFilters.status}
           onChange={(e) => setAdvancedFilters({ ...advancedFilters, status: e.target.value })}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         >
           <option value="">All Status</option>
           <option value="active">In Stock</option>
@@ -631,27 +723,29 @@ const AdminProducts = () => {
               <tr key={product.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <img
-                      src={product.images?.[0] || product.image}
-                      alt={product.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
+                    <div className="h-16 w-16 flex-shrink-0">
+                      <img
+                        src={product.images?.[0] || '/placeholder-product.jpg'}
+                        alt={product.name}
+                        className="h-16 w-16 object-cover rounded-md"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {product.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        SKU: {product.sku || 'N/A'}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500">{product.category}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                  <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                     {product.category}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                   ${product.price.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -659,31 +753,32 @@ const AdminProducts = () => {
                     type="number"
                     value={product.stock}
                     onChange={(e) => handleUpdateStock(product.id, e.target.value)}
-                    className="w-20 rounded-md border-gray-300"
+                    className="w-24 px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     min="0"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    product.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                   }`}>
                     {product.status === 'active' ? 'In Stock' : 'Out of Stock'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
                     <Link
                       to={`/admin/products/edit/${product.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                      className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1.5"
                     >
-                      <FiEdit2 className="h-5 w-5" />
+                      <FiEdit2 className="h-4 w-4" />
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDeleteProduct(product.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 flex items-center gap-1.5"
                     >
-                      <FiTrash2 className="h-5 w-5" />
+                      <FiTrash2 className="h-4 w-4" />
+                      Delete
                     </button>
                   </div>
                 </td>

@@ -93,10 +93,13 @@ const EditProduct = () => {
       const docRef = doc(db, 'products', id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setFormData({ ...docSnap.data() });
-        if (docSnap.data().images) {
-          setImagePreview(docSnap.data().images);
-        }
+        const productData = docSnap.data();
+        setFormData({ 
+          ...productData,
+          features: productData.features || [],
+          images: productData.images || [] // Ensure images is initialized
+        });
+        setImagePreview(productData.images || []); // Initialize image preview
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -110,16 +113,16 @@ const EditProduct = () => {
 
     // Create preview URLs
     const newPreviews = files.map(file => URL.createObjectURL(file));
-    setImagePreview(prev => [...prev, ...newPreviews]);
+    setImagePreview(prev => [...(prev || []), ...newPreviews]); // Handle potential undefined prev
   };
 
   const removeImage = (index) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreview(prev => prev.filter((_, i) => i !== index));
+    setImagePreview(prev => (prev || []).filter((_, i) => i !== index)); // Handle potential undefined prev
   };
 
   const handleFeatureChange = (index, value) => {
-    const newFeatures = [...formData.features];
+    const newFeatures = [...(formData.features || [])];
     newFeatures[index] = value;
     setFormData({ ...formData, features: newFeatures });
   };
@@ -127,12 +130,12 @@ const EditProduct = () => {
   const addFeature = () => {
     setFormData({
       ...formData,
-      features: [...formData.features, ''],
+      features: [...(formData.features || []), '']
     });
   };
 
   const removeFeature = (index) => {
-    const newFeatures = formData.features.filter((_, i) => i !== index);
+    const newFeatures = (formData.features || []).filter((_, i) => i !== index);
     setFormData({ ...formData, features: newFeatures });
   };
 
@@ -359,12 +362,16 @@ const EditProduct = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              {imagePreview.map((image, index) => (
+              {(imagePreview || []).map((image, index) => (
                 <div key={index} className="relative">
                   <img
                     src={image}
                     alt={`Preview ${index + 1}`}
                     className="h-32 w-full object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/placeholder-image.jpg'; // Add a placeholder image
+                    }}
                   />
                   <button
                     type="button"
@@ -400,7 +407,7 @@ const EditProduct = () => {
           {/* Features */}
           <div className="col-span-2">
             <label className={inputStyles.label}>Product Features</label>
-            {formData.features.map((feature, index) => (
+            {(formData.features || []).map((feature, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input
                   type="text"

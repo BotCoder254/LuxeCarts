@@ -10,6 +10,8 @@ import { db } from '../firebase/config';
 
 import { addToCart } from '../store/slices/cartSlice';
 
+import { fetchPricingRules } from '../store/slices/pricingSlice';
+
 import { FiShoppingCart, FiHeart, FiShare2, FiTruck, FiShield, FiPackage, FiTag, FiClock, FiMapPin } from 'react-icons/fi';
 
 import { ThreeDots } from 'react-loader-spinner';
@@ -157,20 +159,30 @@ const ProductDetail = () => {
   };
 
   useEffect(() => {
+    // Fetch pricing rules when component mounts
+    dispatch(fetchPricingRules());
+  }, [dispatch]);
 
+  useEffect(() => {
     // Get user location for location-based pricing
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
+        async (position) => {
+          try {
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`);
+            const data = await response.json();
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              region: data.principalSubdivision // State/Region name
+            });
+          } catch (error) {
+            console.error('Error getting location details:', error);
+          }
         },
         (error) => console.log('Location error:', error)
       );
     }
-
   }, []);
 
   useEffect(() => {
@@ -206,7 +218,7 @@ const ProductDetail = () => {
         }
 
         // Check location-based pricing
-        if (rule.type === 'location' && userLocation && rule.regions.includes(userLocation.region)) {
+        if (rule.type === 'location' && userLocation?.region && rule.regions?.includes(userLocation.region)) {
           const adjustment = rule.adjustmentType === 'percentage'
             ? finalPrice * (rule.adjustmentValue / 100)
             : rule.adjustmentValue;
@@ -217,6 +229,10 @@ const ProductDetail = () => {
 
       setDiscountedPrice(Math.max(0, finalPrice));
       setActiveRules(currentRules);
+    } else {
+      // If no product or rules, set discounted price to product price
+      setDiscountedPrice(product?.price || 0);
+      setActiveRules([]);
     }
   }, [product, rules, quantity, userLocation]);
 
@@ -584,192 +600,185 @@ const ProductDetail = () => {
 
               <div className="flex flex-col space-y-4 mt-6">
                 {/* Price display with discounts */}
-                <div className="flex items-center space-x-4">
-                  <span className="text-3xl font-bold text-gray-900">
-                    ${discountedPrice.toFixed(2)}
-                  </span>
-                  {discountedPrice < product?.price && (
-                    <span className="text-xl text-gray-500 line-through">
-                      ${product?.price?.toFixed(2)}
-                    </span>
+                <div className="mt-4">
+                  {discountedPrice < product.price ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
+                      <span className="text-xl text-gray-500 line-through">${product.price.toFixed(2)}</span>
+                      <span className="text-sm text-green-600">
+                        {((1 - discountedPrice / product.price) * 100).toFixed(0)}% OFF
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                  )}
+                  {activeRules.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {activeRules.map((rule, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-green-600">
+                          {rule.type === 'bulk' && <FiTag className="w-4 h-4" />}
+                          {rule.type === 'sale' && <FiClock className="w-4 h-4" />}
+                          {rule.type === 'location' && <FiMapPin className="w-4 h-4" />}
+                          <span>{rule.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                {/* Active discount badges */}
-                {activeRules.length > 0 && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-wrap gap-2"
-                  >
-                    {activeRules.map((rule) => (
-                      <motion.div
-                        key={rule.id}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                      >
-                        {rule.type === 'bulk' && <FiTag className="w-4 h-4" />}
-                        {rule.type === 'sale' && <FiClock className="w-4 h-4" />}
-                        {rule.type === 'location' && <FiMapPin className="w-4 h-4" />}
-                        <span>{rule.name}</span>
-                      </motion.div>
-                    ))}
-                  </motion.div>
+                <p className="text-gray-600 mb-6">{product.description}</p>
+
+                {/* Size Selector */}
+
+                {product.sizes && product.sizes.length > 0 && (
+
+                  <div className="mb-6">
+
+                    <h3 className="text-sm font-medium text-gray-900 mb-4">Size</h3>
+
+                    <div className="grid grid-cols-4 gap-2">
+
+                      {product.sizes.map((size) => (
+
+                        <button
+
+                          key={size}
+
+                          onClick={() => setSelectedSize(size)}
+
+                          className={`py-2 text-sm font-medium rounded-md ${
+
+                            selectedSize === size
+
+                              ? 'bg-indigo-600 text-white'
+
+                              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+
+                          }`}
+
+                        >
+
+                          {size}
+
+                        </button>
+
+                      ))}
+
+                    </div>
+
+                  </div>
+
                 )}
-              </div>
 
-              <p className="text-gray-600 mb-6">{product.description}</p>
+                {/* Color Selector */}
 
-              {/* Size Selector */}
+                {product.colors && product.colors.length > 0 && (
 
-              {product.sizes && product.sizes.length > 0 && (
+                  <div className="mb-6">
 
-                <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-900 mb-4">Color</h3>
 
-                  <h3 className="text-sm font-medium text-gray-900 mb-4">Size</h3>
+                    <div className="flex space-x-2">
 
-                  <div className="grid grid-cols-4 gap-2">
+                      {product.colors.map((color) => (
 
-                    {product.sizes.map((size) => (
+                        <button
 
-                      <button
+                          key={color}
 
-                        key={size}
+                          onClick={() => setSelectedColor(color)}
 
-                        onClick={() => setSelectedSize(size)}
+                          className={`w-8 h-8 rounded-full border-2 ${
 
-                        className={`py-2 text-sm font-medium rounded-md ${
+                            selectedColor === color
 
-                          selectedSize === size
+                              ? 'border-indigo-600'
 
-                            ? 'bg-indigo-600 text-white'
+                              : 'border-gray-300'
 
-                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                          }`}
 
-                        }`}
+                          style={{ backgroundColor: color }}
 
-                      >
+                        />
 
-                        {size}
+                      ))}
 
-                      </button>
-
-                    ))}
+                    </div>
 
                   </div>
 
-                </div>
+                )}
 
-              )}
-
-              {/* Color Selector */}
-
-              {product.colors && product.colors.length > 0 && (
+                {/* Quantity Selector */}
 
                 <div className="mb-6">
 
-                  <h3 className="text-sm font-medium text-gray-900 mb-4">Color</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">Quantity</h3>
 
-                  <div className="flex space-x-2">
+                  <select
 
-                    {product.colors.map((color) => (
+                    value={quantity}
 
-                      <button
+                    onChange={(e) => setQuantity(Number(e.target.value))}
 
-                        key={color}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
 
-                        onClick={() => setSelectedColor(color)}
+                  >
 
-                        className={`w-8 h-8 rounded-full border-2 ${
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
 
-                          selectedColor === color
+                      <option key={num} value={num}>
 
-                            ? 'border-indigo-600'
+                        {num}
 
-                            : 'border-gray-300'
-
-                        }`}
-
-                        style={{ backgroundColor: color }}
-
-                      />
+                      </option>
 
                     ))}
 
-                  </div>
+                  </select>
 
                 </div>
 
-              )}
+                {/* Add to Cart Button */}
 
-              {/* Quantity Selector */}
+                <button
 
-              <div className="mb-6">
+                  onClick={handleAddToCart}
 
-                <h3 className="text-sm font-medium text-gray-900 mb-4">Quantity</h3>
-
-                <select
-
-                  value={quantity}
-
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2"
 
                 >
 
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                  <FiShoppingCart className="w-5 h-5" />
 
-                    <option key={num} value={num}>
+                  <span>Add to Cart</span>
 
-                      {num}
+                </button>
 
-                    </option>
+                {/* Share Button */}
 
-                  ))}
+                <button
 
-                </select>
+                  onClick={() => {
+
+                    navigator.clipboard.writeText(window.location.href);
+
+                    toast.success('Link copied to clipboard!');
+
+                  }}
+
+                  className="mt-4 w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
+
+                >
+
+                  <FiShare2 className="w-5 h-5" />
+
+                  <span>Share Product</span>
+
+                </button>
 
               </div>
-
-              {/* Add to Cart Button */}
-
-              <button
-
-                onClick={handleAddToCart}
-
-                className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2"
-
-              >
-
-                <FiShoppingCart className="w-5 h-5" />
-
-                <span>Add to Cart</span>
-
-              </button>
-
-              {/* Share Button */}
-
-              <button
-
-                onClick={() => {
-
-                  navigator.clipboard.writeText(window.location.href);
-
-                  toast.success('Link copied to clipboard!');
-
-                }}
-
-                className="mt-4 w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
-
-              >
-
-                <FiShare2 className="w-5 h-5" />
-
-                <span>Share Product</span>
-
-              </button>
 
             </div>
 
