@@ -37,13 +37,17 @@ const BannerManager = () => {
     setSearchLoading(true);
     try {
       const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${unsplashQuery}&client_id=${UNSPLASH_ACCESS_KEY}&per_page=20`
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(unsplashQuery)}&client_id=oRz__lKi7bWKvEFhKhT2ighN2aJcWZ_BwPB-JIkelBk&per_page=20`
       );
+      if (!response.ok) {
+        throw new Error('Failed to fetch from Unsplash');
+      }
       const data = await response.json();
-      setUnsplashImages(data.results);
+      setUnsplashImages(data.results || []);
     } catch (error) {
       console.error('Error searching Unsplash:', error);
       toast.error('Failed to search Unsplash images');
+      setUnsplashImages([]);
     } finally {
       setSearchLoading(false);
     }
