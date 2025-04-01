@@ -130,9 +130,9 @@ const AdminLayout = ({ children }) => {
       <main
         className={`transition-all duration-300 ease-in-out ${
           isMobile ? 'pt-16' : 'pt-8'
-        } lg:ml-64 min-h-screen `}
+        } lg:ml-64 min-h-screen`}
       >
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 ">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {children}
         </div>
       </main>
