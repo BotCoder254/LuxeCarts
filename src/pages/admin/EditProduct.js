@@ -93,9 +93,13 @@ const EditProduct = () => {
       const docRef = doc(db, 'products', id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setFormData({ ...docSnap.data() });
-        if (docSnap.data().images) {
-          setImagePreview(docSnap.data().images);
+        const productData = docSnap.data();
+        setFormData({ 
+          ...productData,
+          features: productData.features || [], // Ensure features is initialized
+        });
+        if (productData.images) {
+          setImagePreview(productData.images);
         }
       }
     } catch (error) {
@@ -119,7 +123,7 @@ const EditProduct = () => {
   };
 
   const handleFeatureChange = (index, value) => {
-    const newFeatures = [...formData.features];
+    const newFeatures = [...(formData.features || [])];
     newFeatures[index] = value;
     setFormData({ ...formData, features: newFeatures });
   };
@@ -127,12 +131,12 @@ const EditProduct = () => {
   const addFeature = () => {
     setFormData({
       ...formData,
-      features: [...formData.features, ''],
+      features: [...(formData.features || []), '']
     });
   };
 
   const removeFeature = (index) => {
-    const newFeatures = formData.features.filter((_, i) => i !== index);
+    const newFeatures = (formData.features || []).filter((_, i) => i !== index);
     setFormData({ ...formData, features: newFeatures });
   };
 
@@ -400,7 +404,7 @@ const EditProduct = () => {
           {/* Features */}
           <div className="col-span-2">
             <label className={inputStyles.label}>Product Features</label>
-            {formData.features.map((feature, index) => (
+            {(formData.features || []).map((feature, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input
                   type="text"

@@ -10,6 +10,8 @@ import { db } from '../firebase/config';
 
 import { addToCart } from '../store/slices/cartSlice';
 
+import { fetchPricingRules } from '../store/slices/pricingSlice';
+
 import { FiShoppingCart, FiHeart, FiShare2, FiTruck, FiShield, FiPackage, FiTag, FiClock, FiMapPin } from 'react-icons/fi';
 
 import { ThreeDots } from 'react-loader-spinner';
@@ -157,20 +159,30 @@ const ProductDetail = () => {
   };
 
   useEffect(() => {
+    // Fetch pricing rules when component mounts
+    dispatch(fetchPricingRules());
+  }, [dispatch]);
 
+  useEffect(() => {
     // Get user location for location-based pricing
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
+        async (position) => {
+          try {
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`);
+            const data = await response.json();
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              region: data.principalSubdivision // State/Region name
+            });
+          } catch (error) {
+            console.error('Error getting location details:', error);
+          }
         },
         (error) => console.log('Location error:', error)
       );
     }
-
   }, []);
 
   useEffect(() => {
@@ -206,7 +218,7 @@ const ProductDetail = () => {
         }
 
         // Check location-based pricing
-        if (rule.type === 'location' && userLocation && rule.regions.includes(userLocation.region)) {
+        if (rule.type === 'location' && userLocation?.region && rule.regions?.includes(userLocation.region)) {
           const adjustment = rule.adjustmentType === 'percentage'
             ? finalPrice * (rule.adjustmentValue / 100)
             : rule.adjustmentValue;
@@ -217,6 +229,10 @@ const ProductDetail = () => {
 
       setDiscountedPrice(Math.max(0, finalPrice));
       setActiveRules(currentRules);
+    } else {
+      // If no product or rules, set discounted price to product price
+      setDiscountedPrice(product?.price || 0);
+      setActiveRules([]);
     }
   }, [product, rules, quantity, userLocation]);
 

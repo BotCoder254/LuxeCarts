@@ -35,6 +35,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
       tags: [],
       brand: '',
       specifications: {},
+      features: [],
     }
   );
   const [imageFiles, setImageFiles] = useState([]);
@@ -70,6 +71,17 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
         [key]: value,
       },
     });
+  };
+
+  const handleFeatureChange = (index, value) => {
+    const newFeatures = [...(formData.features || [])];
+    newFeatures[index] = value;
+    setFormData({ ...formData, features: newFeatures });
+  };
+
+  const removeFeature = (index) => {
+    const newFeatures = (formData.features || []).filter((_, i) => i !== index);
+    setFormData({ ...formData, features: newFeatures });
   };
 
   const handleSubmit = async (e) => {
@@ -328,6 +340,42 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
               + Add Specification
             </button>
           </div>
+        </div>
+
+        {/* Features */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Product Features</label>
+          {(formData.features || []).map((feature, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={feature}
+                onChange={(e) => handleFeatureChange(index, e.target.value)}
+                className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Enter a feature"
+              />
+              <button
+                type="button"
+                onClick={() => removeFeature(index)}
+                className="p-2 text-red-600 hover:text-red-800"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const newFeatures = formData.features || [];
+              setFormData({
+                ...formData,
+                features: [...newFeatures, '']
+              });
+            }}
+            className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            <FiPlus className="w-4 h-4 mr-2" /> Add Feature
+          </button>
         </div>
       </div>
 
