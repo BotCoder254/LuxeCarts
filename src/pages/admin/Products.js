@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   query,
   where,
+  orderBy,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../firebase/config';
@@ -121,7 +122,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -377,6 +378,39 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             <FiPlus className="w-4 h-4 mr-2" /> Add Feature
           </button>
         </div>
+
+        {/* Product Images */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Product Images
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {(formData.images || []).map((image, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={image}
+                  alt={`Product ${index + 1}`}
+                  className="h-24 w-full object-cover rounded-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder-product.jpg';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newImages = [...formData.images];
+                    newImages.splice(index, 1);
+                    setFormData({ ...formData, images: newImages });
+                  }}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end space-x-4 pt-4">
@@ -423,16 +457,19 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'products'));
+      const productsRef = collection(db, 'products');
+      const q = query(productsRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
       const productsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        images: doc.data().images || [] // Ensure images is initialized
       }));
       setProducts(productsData);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast.error('Error loading products');
-    } finally {
+      toast.error('Failed to fetch products');
       setLoading(false);
     }
   };
@@ -442,10 +479,17 @@ const AdminProducts = () => {
       try {
         // Delete product images from storage first
         const product = products.find(p => p.id === productId);
-        if (product.images) {
+        if (product?.images?.length > 0) {
           for (const imageUrl of product.images) {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
+            try {
+              // Extract the storage path from the URL
+              const imagePath = decodeURIComponent(imageUrl.split('/o/')[1].split('?')[0]);
+              const imageRef = ref(storage, imagePath);
+              await deleteObject(imageRef);
+            } catch (imageError) {
+              console.error('Error deleting image:', imageError);
+              // Continue with other images even if one fails
+            }
           }
         }
 
@@ -679,18 +723,20 @@ const AdminProducts = () => {
               <tr key={product.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <img
-                      src={product.images?.[0] || product.image}
-                      alt={product.name}
-                      className="h-10 w-10 rounded-lg object-cover"
-                    />
+                    <div className="h-16 w-16 flex-shrink-0">
+                      <img
+                        src={product.images?.[0] || '/placeholder-product.jpg'}
+                        alt={product.name}
+                        className="h-16 w-16 object-cover rounded-md"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {product.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        SKU: {product.sku || 'N/A'}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500">{product.category}</div>
                     </div>
                   </div>
                 </td>

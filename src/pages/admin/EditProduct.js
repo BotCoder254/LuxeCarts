@@ -96,11 +96,10 @@ const EditProduct = () => {
         const productData = docSnap.data();
         setFormData({ 
           ...productData,
-          features: productData.features || [], // Ensure features is initialized
+          features: productData.features || [],
+          images: productData.images || [] // Ensure images is initialized
         });
-        if (productData.images) {
-          setImagePreview(productData.images);
-        }
+        setImagePreview(productData.images || []); // Initialize image preview
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -114,12 +113,12 @@ const EditProduct = () => {
 
     // Create preview URLs
     const newPreviews = files.map(file => URL.createObjectURL(file));
-    setImagePreview(prev => [...prev, ...newPreviews]);
+    setImagePreview(prev => [...(prev || []), ...newPreviews]); // Handle potential undefined prev
   };
 
   const removeImage = (index) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreview(prev => prev.filter((_, i) => i !== index));
+    setImagePreview(prev => (prev || []).filter((_, i) => i !== index)); // Handle potential undefined prev
   };
 
   const handleFeatureChange = (index, value) => {
@@ -363,12 +362,16 @@ const EditProduct = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              {imagePreview.map((image, index) => (
+              {(imagePreview || []).map((image, index) => (
                 <div key={index} className="relative">
                   <img
                     src={image}
                     alt={`Preview ${index + 1}`}
                     className="h-32 w-full object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/placeholder-image.jpg'; // Add a placeholder image
+                    }}
                   />
                   <button
                     type="button"
