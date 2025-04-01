@@ -12,6 +12,8 @@ import { motion } from 'framer-motion';
 
 import toast from 'react-hot-toast';
 
+import AuthBanner from '../components/AuthBanner';
+
 
 
 const ForgotPassword = () => {
@@ -112,15 +114,7 @@ const ForgotPassword = () => {
 
         <div className="hidden lg:block w-1/2 pr-8">
 
-          <img
-
-            src="/forgot-password-side-image.jpg"
-
-            alt="Reset Password"
-
-            className="w-full h-full object-cover rounded-l-xl shadow-lg"
-
-          />
+          <AuthBanner defaultImage="/forgot-password-side-image.jpg" />
 
         </div>
 

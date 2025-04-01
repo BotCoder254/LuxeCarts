@@ -12,14 +12,11 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Initialize Stripe with proper error handling
+// Initialize Stripe
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
-
-// Add M-Pesa server URL constant
-const MPESA_SERVER_URL = process.env.REACT_APP_MPESA_SERVER_URL || 'https://luxecarts-mpesa.onrender.com'; // Ensure this URL is correct 
 
 // Stripe Card Element styles
 const cardElementStyle = {
@@ -75,7 +72,6 @@ const CheckoutForm = () => {
 
   const handleStripePayment = async () => {
     if (!stripe || !elements) {
-      toast.error('Stripe is not properly initialized. Please try again.');
       return;
     }
 
@@ -98,32 +94,58 @@ const CheckoutForm = () => {
 
       setOrderRef(orderDocRef);
 
-      // Create payment intent directly using Stripe Elements
-      const { error: backendError, clientSecret } = await fetch('/api/create-payment-intent', {
+      // Create payment intent with improved error handling
+      const response = await fetch(process.env.REACT_APP_STRIPE_SERVER_URL + '/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': window.location.origin
         },
+        credentials: 'include',
         body: JSON.stringify({
           amount: Math.round(finalTotal * 100),
           currency: 'usd',
+          customer_email: shippingDetails.email,
+          customer_name: shippingDetails.name,
+          shipping: {
+            name: shippingDetails.name,
+            address: {
+              line1: shippingDetails.address,
+              city: shippingDetails.city,
+              state: shippingDetails.state,
+              postal_code: shippingDetails.zipCode,
+              country: shippingDetails.country
+            }
+          },
           metadata: {
-            orderId: orderDocRef.id
+            order_id: orderDocRef.id
           }
         }),
-      }).then(r => r.json());
+      });
 
-      if (backendError) {
-        throw new Error(backendError.message);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Payment server error:', {
+          status: response.status,
+          statusText: response.statusText,
+          response: errorText
+        });
+        throw new Error('Unable to process payment. Please try again.');
       }
 
-      // Confirm card payment
-      const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      const data = await response.json();
+      
+      if (!data || !data.clientSecret) {
+        throw new Error('Invalid response from payment server');
+      }
+
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
           billing_details: {
             name: shippingDetails.name,
             email: shippingDetails.email,
+            phone: shippingDetails.phone,
             address: {
               line1: shippingDetails.address,
               city: shippingDetails.city,
@@ -135,8 +157,34 @@ const CheckoutForm = () => {
         }
       });
 
-      if (paymentError) {
-        throw new Error(paymentError.message);
+      if (stripeError) {
+        console.error('Stripe error:', stripeError);
+        let errorMessage = 'Payment failed. ';
+        
+        if (stripeError.type === 'card_error') {
+          switch (stripeError.code) {
+            case 'card_declined':
+              errorMessage += 'Your card was declined.';
+              break;
+            case 'expired_card':
+              errorMessage += 'Your card has expired.';
+              break;
+            case 'incorrect_cvc':
+              errorMessage += 'The security code is incorrect.';
+              break;
+            case 'processing_error':
+              errorMessage += 'An error occurred while processing your card.';
+              break;
+            case 'insufficient_funds':
+              errorMessage += 'Your card has insufficient funds.';
+              break;
+            default:
+              errorMessage += stripeError.message || 'Please try again.';
+          }
+        } else {
+          errorMessage += 'Please check your card details and try again.';
+        }
+        throw new Error(errorMessage);
       }
 
       if (paymentIntent.status === 'succeeded') {
@@ -147,8 +195,9 @@ const CheckoutForm = () => {
           isVisible: true,
           stripePaymentIntentId: paymentIntent.id,
           paymentDetails: {
-            last4: paymentIntent.payment_method?.card?.last4,
-            brand: paymentIntent.payment_method?.card?.brand
+            last4: paymentIntent.payment_method_details?.card?.last4,
+            brand: paymentIntent.payment_method_details?.card?.brand,
+            paymentMethodType: paymentIntent.payment_method_types?.[0]
           }
         });
 
@@ -156,10 +205,12 @@ const CheckoutForm = () => {
         navigate('/order-success', {
           state: {
             orderId: orderDocRef.id,
-            total: finalTotal
+            total: finalTotal,
           }
         });
         toast.success('Payment successful! Order placed.');
+      } else {
+        throw new Error('Payment was not completed. Please try again.');
       }
     } catch (error) {
       console.error('Stripe payment error:', error);
@@ -211,19 +262,20 @@ const CheckoutForm = () => {
           paymentStatus: 'pending',
           status: 'pending',
           createdAt: serverTimestamp(),
-          isVisible: false,
-          paymentMethod: 'mpesa'
+          isVisible: false // Hide from admin until payment is successful
         });
 
         newOrderRef = orderDocRef;
         setOrderRef(orderDocRef);
 
-        // Use the MPESA_SERVER_URL constant
-        const response = await fetch(`${MPESA_SERVER_URL}/stkpush`, {
+        // Then initiate payment using the local reference
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/stkpush`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             phone: shippingDetails.phone,
             amount: Math.round(finalTotal),
@@ -231,25 +283,28 @@ const CheckoutForm = () => {
           })
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('M-Pesa server error:', {
-            status: response.status,
-            statusText: response.statusText,
-            response: errorText
-          });
-          throw new Error('Unable to process M-Pesa payment. Please try again.');
+        const responseClone = response.clone();
+        let data;
+        
+        try {
+          data = await response.json();
+        } catch (error) {
+          const textData = await responseClone.text();
+          console.error('Failed to parse JSON:', textData);
+          throw new Error('Invalid response from server');
         }
 
-        const data = await response.json();
-        
+        if (!response.ok) {
+          throw new Error(data.message || 'Payment failed');
+        }
+
         if (data.ResponseCode === "0") {
           // Payment initiated successfully
           toast.loading('Processing payment...', { duration: 15000 });
           setCheckoutRequestID(data.CheckoutRequestID);
           setShowPaymentStatus(true);
           
-          // Start polling for payment status
+          // Start polling for payment status with the local reference
           startPolling(data.CheckoutRequestID, orderDocRef);
         } else {
           throw new Error(data.ResponseDescription || 'Failed to initiate payment');
@@ -281,12 +336,13 @@ const CheckoutForm = () => {
     // Set up new polling interval
     const interval = setInterval(async () => {
       try {
-        // Use the MPESA_SERVER_URL constant
-        const response = await fetch(`${MPESA_SERVER_URL}/query`, {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/query`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json"
           },
+          credentials: 'include',
           body: JSON.stringify({
             queryCode: checkoutRequestID
           }),
