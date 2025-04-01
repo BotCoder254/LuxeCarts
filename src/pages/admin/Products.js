@@ -118,7 +118,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -128,7 +128,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
             <option value="">Select Category</option>
             {categories.map((category) => (
@@ -147,7 +147,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -158,7 +158,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             required
             value={formData.stock}
             onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -169,7 +169,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.sizes.join(', ')}
             onChange={handleSizeChange}
             placeholder="S, M, L, XL"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -180,7 +180,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.colors.join(', ')}
             onChange={handleColorChange}
             placeholder="Red, Blue, Green"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -192,7 +192,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             max="100"
             value={formData.discount}
             onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -203,7 +203,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             rows={6}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
           />
         </div>
 
@@ -268,7 +268,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             value={formData.tags.join(', ')}
             onChange={handleTagsChange}
             placeholder="e.g., wireless, bluetooth, electronics"
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -278,7 +278,7 @@ const ProductForm = ({ product, onSubmit, onCancel }) => {
             type="text"
             value={formData.brand}
             onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-            className="mt-1 block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base"
+            className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
 
@@ -576,12 +576,12 @@ const AdminProducts = () => {
           placeholder="Search products..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         >
           <option value="">All Categories</option>
           {['Electronics', 'Fashion', 'Home', 'Beauty', 'Sports'].map((category) => (
@@ -593,7 +593,7 @@ const AdminProducts = () => {
         <select
           value={advancedFilters.status}
           onChange={(e) => setAdvancedFilters({ ...advancedFilters, status: e.target.value })}
-          className="rounded-md border-gray-300"
+          className="block w-full px-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         >
           <option value="">All Status</option>
           <option value="active">In Stock</option>
@@ -634,7 +634,7 @@ const AdminProducts = () => {
                     <img
                       src={product.images?.[0] || product.image}
                       alt={product.name}
-                      className="h-10 w-10 rounded-full object-cover"
+                      className="h-10 w-10 rounded-lg object-cover"
                     />
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
@@ -647,11 +647,11 @@ const AdminProducts = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                  <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                     {product.category}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                   ${product.price.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -659,31 +659,32 @@ const AdminProducts = () => {
                     type="number"
                     value={product.stock}
                     onChange={(e) => handleUpdateStock(product.id, e.target.value)}
-                    className="w-20 rounded-md border-gray-300"
+                    className="w-24 px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     min="0"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    product.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                   }`}>
                     {product.status === 'active' ? 'In Stock' : 'Out of Stock'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
                     <Link
                       to={`/admin/products/edit/${product.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                      className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1.5"
                     >
-                      <FiEdit2 className="h-5 w-5" />
+                      <FiEdit2 className="h-4 w-4" />
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDeleteProduct(product.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 flex items-center gap-1.5"
                     >
-                      <FiTrash2 className="h-5 w-5" />
+                      <FiTrash2 className="h-4 w-4" />
+                      Delete
                     </button>
                   </div>
                 </td>
