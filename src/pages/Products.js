@@ -37,10 +37,29 @@ const Products = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const productsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const productsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          price: parseFloat(data.price) || 0,
+          discounts: {
+            sale: data.discounts?.sale ? {
+              ...data.discounts.sale,
+              discountValue: parseFloat(data.discounts.sale.discountValue) || 0
+            } : undefined,
+            bulk: data.discounts?.bulk ? {
+              ...data.discounts.bulk,
+              discountValue: parseFloat(data.discounts.bulk.discountValue) || 0,
+              minQuantity: parseInt(data.discounts.bulk.minQuantity) || 1
+            } : undefined,
+            location: data.discounts?.location ? {
+              ...data.discounts.location,
+              adjustmentValue: parseFloat(data.discounts.location.adjustmentValue) || 0
+            } : undefined
+          }
+        };
+      });
       setProducts(productsData);
       setLoading(false);
     }, (error) => {

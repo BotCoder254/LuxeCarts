@@ -20,7 +20,7 @@ const ProductCard = ({ product, view = 'grid' }) => {
     const now = new Date();
     const discounts = product.discounts || {};
     const activeDiscounts = [];
-    let finalPrice = product.price;
+    let finalPrice = parseFloat(product.price) || 0;  // Ensure price is a number
 
     // Check sale discount
     if (discounts.sale?.enabled) {
@@ -28,40 +28,63 @@ const ProductCard = ({ product, view = 'grid' }) => {
       const endDate = discounts.sale.endDate ? new Date(discounts.sale.endDate) : null;
 
       if ((!startDate || now >= startDate) && (!endDate || now <= endDate)) {
+        const discountValue = parseFloat(discounts.sale.discountValue) || 0;
         const discount = discounts.sale.discountType === 'percentage'
-          ? finalPrice * (parseFloat(discounts.sale.discountValue) / 100)
-          : parseFloat(discounts.sale.discountValue);
+          ? finalPrice * (discountValue / 100)
+          : discountValue;
         finalPrice = Math.max(0, finalPrice - discount);
         activeDiscounts.push({
           type: 'sale',
-          value: discounts.sale.discountValue,
-          discountType: discounts.sale.discountType
+          value: discountValue,
+          discountType: discounts.sale.discountType,
+          originalPrice: product.price
         });
       }
     }
 
     // Check bulk discount
     if (discounts.bulk?.enabled) {
-      activeDiscounts.push({
-        type: 'bulk',
-        value: discounts.bulk.discountValue,
-        discountType: discounts.bulk.discountType,
-        minQuantity: discounts.bulk.minQuantity
-      });
+      const discountValue = parseFloat(discounts.bulk.discountValue) || 0;
+      const bulkDiscount = discounts.bulk.discountType === 'percentage'
+        ? finalPrice * (discountValue / 100)
+        : discountValue;
+      // Only apply bulk discount if it would result in a better price for the customer
+      if (bulkDiscount > 0) {
+        finalPrice = Math.max(0, finalPrice - bulkDiscount);
+        activeDiscounts.push({
+          type: 'bulk',
+          value: discountValue,
+          discountType: discounts.bulk.discountType,
+          minQuantity: discounts.bulk.minQuantity,
+          originalPrice: product.price
+        });
+      }
     }
 
     // Check location-based pricing
-    if (discounts.location?.enabled && discounts.location.regions.length > 0) {
+    if (discounts.location?.enabled && discounts.location.regions?.length > 0) {
+      const adjustmentValue = parseFloat(discounts.location.adjustmentValue) || 0;
+      const adjustment = discounts.location.adjustmentType === 'percentage'
+        ? finalPrice * (adjustmentValue / 100)
+        : adjustmentValue;
+      
+      if (discounts.location.adjustmentType === 'increase') {
+        finalPrice += adjustment;
+      } else {
+        finalPrice = Math.max(0, finalPrice - adjustment);
+      }
+      
       activeDiscounts.push({
         type: 'location',
         regions: discounts.location.regions,
         adjustmentType: discounts.location.adjustmentType,
-        adjustmentValue: discounts.location.adjustmentValue
+        adjustmentValue: adjustmentValue,
+        originalPrice: product.price
       });
     }
 
     return {
-      finalPrice: Math.max(0, finalPrice),
+      finalPrice: parseFloat(finalPrice.toFixed(2)),  // Round to 2 decimal places
       activeDiscounts,
       hasDiscount: finalPrice < product.price
     };
@@ -109,12 +132,14 @@ const ProductCard = ({ product, view = 'grid' }) => {
 
   const getDiscountLabel = (discount) => {
     switch (discount.type) {
-      case 'bulk':
-        return `${discount.value}${discount.discountType === 'percentage' ? '%' : '$'} off ${discount.minQuantity}+`;
       case 'sale':
-        return `${discount.value}${discount.discountType === 'percentage' ? '%' : '$'} off`;
+        return discount.discountType === 'percentage'
+          ? `${discount.value}% OFF`
+          : `$${discount.value} OFF`;
+      case 'bulk':
+        return `${discount.discountType === 'percentage' ? `${discount.value}%` : `$${discount.value}`} OFF ${discount.minQuantity}+`;
       case 'location':
-        return `${discount.regions[0]} pricing`;
+        return `${discount.regions[0]}${discount.regions.length > 1 ? ' +' + (discount.regions.length - 1) : ''} ${discount.adjustmentType === 'increase' ? 'Price' : 'Discount'}`;
       default:
         return '';
     }
@@ -145,7 +170,7 @@ const ProductCard = ({ product, view = 'grid' }) => {
         )}
         {hasDiscount && (
           <span className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium">
-            {Math.round(((product.price - finalPrice) / product.price) * 100)}% OFF
+            {Math.round(((parseFloat(product.price) - finalPrice) / parseFloat(product.price)) * 100)}% OFF
           </span>
         )}
         {product.stock <= product.stockThreshold && (
@@ -168,9 +193,9 @@ const ProductCard = ({ product, view = 'grid' }) => {
             <span className="text-xl font-bold text-gray-900">
               ${finalPrice.toFixed(2)}
             </span>
-            {hasDiscount && (
+            {hasDiscount && product.price && (
               <span className="text-sm text-gray-500 line-through">
-                ${product.price.toFixed(2)}
+                ${parseFloat(product.price).toFixed(2)}
               </span>
             )}
           </div>
