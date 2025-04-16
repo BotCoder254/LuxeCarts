@@ -46,6 +46,27 @@ const NewProduct = () => {
     salePrice: '',
     saleStartDate: '',
     saleEndDate: '',
+    discounts: {
+      bulk: {
+        enabled: false,
+        minQuantity: '',
+        discountType: 'percentage',
+        discountValue: '',
+      },
+      sale: {
+        enabled: false,
+        discountType: 'percentage',
+        discountValue: '',
+        startDate: '',
+        endDate: '',
+      },
+      location: {
+        enabled: false,
+        regions: [],
+        adjustmentType: 'percentage',
+        adjustmentValue: '',
+      }
+    },
     shippingClass: 'standard',
     taxClass: 'standard',
     metaTitle: '',
@@ -149,6 +170,40 @@ const NewProduct = () => {
     setFormData({ ...formData, specifications: newSpecs });
   };
 
+  const handleDiscountChange = (type, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      discounts: {
+        ...prev.discounts,
+        [type]: {
+          ...prev.discounts[type],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const calculateFinalPrice = () => {
+    let finalPrice = parseFloat(formData.price) || 0;
+    const discounts = formData.discounts;
+
+    if (discounts.sale.enabled) {
+      const discount = discounts.sale.discountType === 'percentage'
+        ? finalPrice * (parseFloat(discounts.sale.discountValue) / 100)
+        : parseFloat(discounts.sale.discountValue);
+      finalPrice -= discount;
+    }
+
+    if (discounts.bulk.enabled) {
+      const discount = discounts.bulk.discountType === 'percentage'
+        ? finalPrice * (parseFloat(discounts.bulk.discountValue) / 100)
+        : parseFloat(discounts.bulk.discountValue);
+      finalPrice = Math.max(0, finalPrice - discount);
+    }
+
+    return Math.max(0, finalPrice);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -166,14 +221,24 @@ const NewProduct = () => {
         }
       }
 
+      const finalPrice = calculateFinalPrice();
       const productData = {
         ...formData,
         price: parseFloat(formData.price),
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+        finalPrice,
         stock: parseInt(formData.stock),
         stockThreshold: parseInt(formData.stockThreshold),
         weight: formData.weight ? parseFloat(formData.weight) : null,
         images: imageUrls,
+        discounts: {
+          ...formData.discounts,
+          sale: {
+            ...formData.discounts.sale,
+            startDate: formData.discounts.sale.startDate ? new Date(formData.discounts.sale.startDate).toISOString() : null,
+            endDate: formData.discounts.sale.endDate ? new Date(formData.discounts.sale.endDate).toISOString() : null,
+          }
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -445,6 +510,184 @@ const NewProduct = () => {
                 On Sale
               </label>
             </div>
+          </div>
+
+          {/* Pricing and Discounts Section */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-gray-900">Pricing & Discounts</h3>
+            
+            {/* Regular Price */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className={inputStyles.label}>Regular Price</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="pl-8 w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={inputStyles.label}>Compare at Price</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.compareAtPrice}
+                    onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                    className="pl-8 w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sale Discount */}
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.discounts.sale.enabled}
+                  onChange={(e) => handleDiscountChange('sale', 'enabled', e.target.checked)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">Enable Sale Discount</label>
+              </div>
+
+              {formData.discounts.sale.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className={inputStyles.label}>Discount Type</label>
+                    <select
+                      value={formData.discounts.sale.discountType}
+                      onChange={(e) => handleDiscountChange('sale', 'discountType', e.target.value)}
+                      className={inputStyles.base}
+                    >
+                      <option value="percentage">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={inputStyles.label}>
+                      {formData.discounts.sale.discountType === 'percentage' ? 'Discount %' : 'Discount Amount'}
+                    </label>
+                    <div className="relative">
+                      {formData.discounts.sale.discountType === 'fixed' && (
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                      )}
+                      <input
+                        type="number"
+                        step={formData.discounts.sale.discountType === 'percentage' ? '1' : '0.01'}
+                        value={formData.discounts.sale.discountValue}
+                        onChange={(e) => handleDiscountChange('sale', 'discountValue', e.target.value)}
+                        className={`${formData.discounts.sale.discountType === 'fixed' ? 'pl-8' : ''} w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                      />
+                      {formData.discounts.sale.discountType === 'percentage' && (
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className={inputStyles.label}>Sale Start Date</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.discounts.sale.startDate}
+                      onChange={(e) => handleDiscountChange('sale', 'startDate', e.target.value)}
+                      className={inputStyles.base}
+                    />
+                  </div>
+                  <div>
+                    <label className={inputStyles.label}>Sale End Date</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.discounts.sale.endDate}
+                      onChange={(e) => handleDiscountChange('sale', 'endDate', e.target.value)}
+                      className={inputStyles.base}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk Discount */}
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.discounts.bulk.enabled}
+                  onChange={(e) => handleDiscountChange('bulk', 'enabled', e.target.checked)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">Enable Bulk Discount</label>
+              </div>
+
+              {formData.discounts.bulk.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className={inputStyles.label}>Minimum Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.discounts.bulk.minQuantity}
+                      onChange={(e) => handleDiscountChange('bulk', 'minQuantity', e.target.value)}
+                      className={inputStyles.base}
+                    />
+                  </div>
+                  <div>
+                    <label className={inputStyles.label}>Discount Type</label>
+                    <select
+                      value={formData.discounts.bulk.discountType}
+                      onChange={(e) => handleDiscountChange('bulk', 'discountType', e.target.value)}
+                      className={inputStyles.base}
+                    >
+                      <option value="percentage">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={inputStyles.label}>
+                      {formData.discounts.bulk.discountType === 'percentage' ? 'Discount %' : 'Discount Amount'}
+                    </label>
+                    <div className="relative">
+                      {formData.discounts.bulk.discountType === 'fixed' && (
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                      )}
+                      <input
+                        type="number"
+                        step={formData.discounts.bulk.discountType === 'percentage' ? '1' : '0.01'}
+                        value={formData.discounts.bulk.discountValue}
+                        onChange={(e) => handleDiscountChange('bulk', 'discountValue', e.target.value)}
+                        className={`${formData.discounts.bulk.discountType === 'fixed' ? 'pl-8' : ''} w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                      />
+                      {formData.discounts.bulk.discountType === 'percentage' && (
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Final Price Preview */}
+            {(formData.discounts.sale.enabled || formData.discounts.bulk.enabled) && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Final Price Preview:</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  ${calculateFinalPrice().toFixed(2)}
+                  {formData.price && (
+                    <span className="ml-2 text-sm text-gray-500 line-through">
+                      ${parseFloat(formData.price).toFixed(2)}
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

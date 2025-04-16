@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { collection, query, where, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
@@ -7,6 +7,7 @@ import { FiSearch, FiFilter, FiGrid, FiList, FiX, FiLoader } from 'react-icons/f
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThreeDots } from 'react-loader-spinner';
 import toast from 'react-hot-toast';
+import { fetchPricingRules } from '../store/slices/pricingSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
@@ -22,6 +23,11 @@ const Products = () => {
     inStock: false,
     onSale: false,
   });
+
+  // Fetch pricing rules
+  useEffect(() => {
+    dispatch(fetchPricingRules());
+  }, [dispatch]);
 
   // Real-time products listener
   useEffect(() => {
@@ -238,42 +244,27 @@ const Products = () => {
       </AnimatePresence>
 
       {/* Products Grid/List */}
-      {filteredProducts.length === 0 ? (
+      <div className={`grid gap-6 ${
+        view === 'grid' 
+          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+          : 'grid-cols-1'
+      }`}>
+        {filteredProducts.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            view={view}
+          />
+        ))}
+      </div>
+
+      {/* Empty State */}
+      {filteredProducts.length === 0 && !loading && (
         <div className="text-center py-12">
-          <FiLoader className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">No products found matching your criteria</p>
-          <button
-            onClick={() => {
-              setFilters({
-                category: '',
-                priceRange: '',
-                sortBy: '',
-                inStock: false,
-                onSale: false,
-              });
-              setSearchQuery('');
-            }}
-            className="mt-4 text-indigo-600 hover:text-indigo-800"
-          >
-            Clear all filters
-          </button>
-        </div>
-      ) : (
-        <>
-          <p className="text-sm text-gray-500 mb-4">
-            Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+          <p className="text-gray-500 text-lg">
+            No products found matching your criteria
           </p>
-          <div className={view === 'grid' 
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' 
-            : 'space-y-6'
-          }>
-            <AnimatePresence>
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} view={view} />
-              ))}
-            </AnimatePresence>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
