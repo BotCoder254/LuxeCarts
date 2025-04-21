@@ -20,7 +20,9 @@ const ProductCard = ({ product, view = 'grid' }) => {
     const now = new Date();
     const discounts = product.discounts || {};
     const activeDiscounts = [];
-    let finalPrice = parseFloat(product.price) || 0;  // Ensure price is a number
+    let finalPrice = parseFloat(product.price) || 0;
+    let totalDiscountPercentage = 0;
+    let totalDiscountAmount = 0;
 
     // Check sale discount
     if (discounts.sale?.enabled) {
@@ -32,12 +34,23 @@ const ProductCard = ({ product, view = 'grid' }) => {
         const discount = discounts.sale.discountType === 'percentage'
           ? finalPrice * (discountValue / 100)
           : discountValue;
+        
         finalPrice = Math.max(0, finalPrice - discount);
+        totalDiscountAmount += discount;
+        
+        if (discounts.sale.discountType === 'percentage') {
+          totalDiscountPercentage += discountValue;
+        } else {
+          totalDiscountPercentage += (discount / product.price) * 100;
+        }
+        
         activeDiscounts.push({
           type: 'sale',
           value: discountValue,
           discountType: discounts.sale.discountType,
-          originalPrice: product.price
+          label: discounts.sale.discountType === 'percentage' 
+            ? `${discountValue}% Sale` 
+            : `$${discountValue.toFixed(2)} Off`
         });
       }
     }
@@ -45,52 +58,43 @@ const ProductCard = ({ product, view = 'grid' }) => {
     // Check bulk discount
     if (discounts.bulk?.enabled) {
       const discountValue = parseFloat(discounts.bulk.discountValue) || 0;
-      const bulkDiscount = discounts.bulk.discountType === 'percentage'
+      const discount = discounts.bulk.discountType === 'percentage'
         ? finalPrice * (discountValue / 100)
         : discountValue;
-      // Only apply bulk discount if it would result in a better price for the customer
-      if (bulkDiscount > 0) {
-        finalPrice = Math.max(0, finalPrice - bulkDiscount);
+
+      if (discount > 0) {
+        finalPrice = Math.max(0, finalPrice - discount);
+        totalDiscountAmount += discount;
+        
+        if (discounts.bulk.discountType === 'percentage') {
+          totalDiscountPercentage += discountValue;
+        } else {
+          totalDiscountPercentage += (discount / product.price) * 100;
+        }
+        
         activeDiscounts.push({
           type: 'bulk',
           value: discountValue,
           discountType: discounts.bulk.discountType,
           minQuantity: discounts.bulk.minQuantity,
-          originalPrice: product.price
+          label: discounts.bulk.discountType === 'percentage'
+            ? `${discountValue}% Bulk (${discounts.bulk.minQuantity}+)`
+            : `$${discountValue.toFixed(2)} Off (${discounts.bulk.minQuantity}+)`
         });
       }
     }
 
-    // Check location-based pricing
-    if (discounts.location?.enabled && discounts.location.regions?.length > 0) {
-      const adjustmentValue = parseFloat(discounts.location.adjustmentValue) || 0;
-      const adjustment = discounts.location.adjustmentType === 'percentage'
-        ? finalPrice * (adjustmentValue / 100)
-        : adjustmentValue;
-      
-      if (discounts.location.adjustmentType === 'increase') {
-        finalPrice += adjustment;
-      } else {
-        finalPrice = Math.max(0, finalPrice - adjustment);
-      }
-      
-      activeDiscounts.push({
-        type: 'location',
-        regions: discounts.location.regions,
-        adjustmentType: discounts.location.adjustmentType,
-        adjustmentValue: adjustmentValue,
-        originalPrice: product.price
-      });
-    }
-
     return {
-      finalPrice: parseFloat(finalPrice.toFixed(2)),  // Round to 2 decimal places
+      finalPrice: parseFloat(finalPrice.toFixed(2)),
+      originalPrice: parseFloat(product.price),
       activeDiscounts,
-      hasDiscount: finalPrice < product.price
+      hasDiscount: totalDiscountAmount > 0,
+      totalDiscountPercentage: Math.round(totalDiscountPercentage),
+      totalDiscountAmount: totalDiscountAmount
     };
   };
 
-  const { finalPrice, activeDiscounts, hasDiscount } = calculateDiscounts();
+  const { finalPrice, originalPrice, activeDiscounts, hasDiscount, totalDiscountPercentage, totalDiscountAmount } = calculateDiscounts();
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -160,17 +164,19 @@ const ProductCard = ({ product, view = 'grid' }) => {
                 key={`${discount.type}-${index}`}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-full text-xs shadow-md"
+                className={`flex items-center gap-1 px-2 py-1 ${
+                  discount.type === 'sale' ? 'bg-red-600' : 'bg-blue-600'
+                } text-white rounded-full text-xs shadow-md`}
               >
                 {getRuleIcon(discount.type)}
-                <span>{getDiscountLabel(discount)}</span>
+                <span>{discount.label}</span>
               </motion.div>
             ))}
           </div>
         )}
         {hasDiscount && (
           <span className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium">
-            {Math.round(((parseFloat(product.price) - finalPrice) / parseFloat(product.price)) * 100)}% OFF
+            {totalDiscountPercentage}% OFF
           </span>
         )}
         {product.stock <= product.stockThreshold && (
@@ -190,13 +196,20 @@ const ProductCard = ({ product, view = 'grid' }) => {
 
         <div className="mt-4 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-xl font-bold text-gray-900">
-              ${finalPrice.toFixed(2)}
-            </span>
-            {hasDiscount && product.price && (
-              <span className="text-sm text-gray-500 line-through">
-                ${parseFloat(product.price).toFixed(2)}
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-gray-900">
+                ${finalPrice.toFixed(2)}
               </span>
+              {hasDiscount && (
+                <span className="text-sm text-gray-500 line-through">
+                  ${originalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+            {activeDiscounts.length > 0 && (
+              <div className="text-xs text-green-600 mt-1">
+                Save ${totalDiscountAmount.toFixed(2)} ({totalDiscountPercentage}% off)
+              </div>
             )}
           </div>
 
