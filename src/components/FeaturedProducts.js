@@ -30,22 +30,43 @@ const FeaturedProducts = () => {
           return {
             id: doc.id,
             ...data,
+            name: data.name || 'Untitled Product',
+            description: data.description || '',
             price: parseFloat(data.price) || 0,
+            stock: parseInt(data.stock) || 0,
+            stockThreshold: parseInt(data.stockThreshold) || 5,
+            image: data.image || data.images?.[0] || '',
+            images: data.images || [],
+            discount: data.discount ? parseFloat(data.discount) : null,
             discounts: {
               sale: data.discounts?.sale ? {
                 ...data.discounts.sale,
-                discountValue: parseFloat(data.discounts.sale.discountValue) || 0
-              } : undefined,
+                enabled: Boolean(data.discounts.sale.enabled),
+                discountValue: parseFloat(data.discounts.sale.discountValue) || 0,
+                discountType: data.discounts.sale.discountType || 'percentage',
+                startDate: data.discounts.sale.startDate || null,
+                endDate: data.discounts.sale.endDate || null
+              } : {
+                enabled: false,
+                discountValue: 0,
+                discountType: 'percentage'
+              },
               bulk: data.discounts?.bulk ? {
                 ...data.discounts.bulk,
+                enabled: Boolean(data.discounts.bulk.enabled),
                 discountValue: parseFloat(data.discounts.bulk.discountValue) || 0,
+                discountType: data.discounts.bulk.discountType || 'percentage',
                 minQuantity: parseInt(data.discounts.bulk.minQuantity) || 1
-              } : undefined,
-              location: data.discounts?.location ? {
-                ...data.discounts.location,
-                adjustmentValue: parseFloat(data.discounts.location.adjustmentValue) || 0
-              } : undefined
-            }
+              } : {
+                enabled: false,
+                discountValue: 0,
+                discountType: 'percentage',
+                minQuantity: 1
+              }
+            },
+            features: Array.isArray(data.features) ? data.features : [],
+            onSale: Boolean(data.onSale),
+            category: data.category || 'Uncategorized'
           };
         });
         setFeaturedProducts(products);

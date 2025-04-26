@@ -49,6 +49,7 @@ const Products = () => {
           stockThreshold: parseInt(data.stockThreshold) || 5,
           image: data.image || data.images?.[0] || '',
           images: data.images || [],
+          discount: data.discount ? parseFloat(data.discount) : null,
           discounts: {
             sale: data.discounts?.sale ? {
               ...data.discounts.sale,

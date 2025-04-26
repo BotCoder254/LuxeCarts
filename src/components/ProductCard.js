@@ -84,6 +84,22 @@ const ProductCard = ({ product, view = 'grid' }) => {
       }
     }
 
+    // Check if there's a simple discount percentage
+    if (product.discount && !isNaN(parseFloat(product.discount))) {
+      const discountValue = parseFloat(product.discount);
+      const discount = finalPrice * (discountValue / 100);
+      finalPrice = Math.max(0, finalPrice - discount);
+      totalDiscountAmount += discount;
+      totalDiscountPercentage += discountValue;
+      
+      activeDiscounts.push({
+        type: 'sale',
+        value: discountValue,
+        discountType: 'percentage',
+        label: `${discountValue}% OFF`
+      });
+    }
+
     return {
       finalPrice: parseFloat(finalPrice.toFixed(2)),
       originalPrice: parseFloat(product.price),
