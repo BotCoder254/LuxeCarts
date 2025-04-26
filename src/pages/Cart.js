@@ -138,15 +138,37 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
         <p className="text-lg font-bold text-gray-900">
 
-          ${(item.price * item.quantity).toFixed(2)}
+          ${((item.finalPrice || item.price) * item.quantity).toFixed(2)}
 
         </p>
 
-        <p className="text-sm text-gray-500">
+        {item.finalPrice && item.finalPrice < item.price ? (
 
-          ${item.price.toFixed(2)} each
+          <>
 
-        </p>
+            <p className="text-sm text-gray-500 line-through">
+
+              ${item.price.toFixed(2)} each
+
+            </p>
+
+            <p className="text-sm text-green-600">
+
+              ${item.finalPrice.toFixed(2)} each
+
+            </p>
+
+          </>
+
+        ) : (
+
+          <p className="text-sm text-gray-500">
+
+            ${(item.finalPrice || item.price).toFixed(2)} each
+
+          </p>
+
+        )}
 
       </div>
 
