@@ -414,6 +414,112 @@ const ProductDetail = () => {
 
   }, [user, product, id]);
 
+  // Calculate active discounts and final price
+  const calculateDiscounts = () => {
+    if (!product) return {
+      finalPrice: 0,
+      originalPrice: 0,
+      activeDiscounts: [],
+      hasDiscount: false,
+      totalDiscountPercentage: 0,
+      totalDiscountAmount: 0
+    };
+
+    const now = new Date();
+    const discounts = product.discounts || {};
+    const activeDiscounts = [];
+    let finalPrice = parseFloat(product.price) || 0;
+    let totalDiscountPercentage = 0;
+    let totalDiscountAmount = 0;
+
+    // Check sale discount
+    if (discounts.sale?.enabled) {
+      const startDate = discounts.sale.startDate ? new Date(discounts.sale.startDate) : null;
+      const endDate = discounts.sale.endDate ? new Date(discounts.sale.endDate) : null;
+
+      if ((!startDate || now >= startDate) && (!endDate || now <= endDate)) {
+        const discountValue = parseFloat(discounts.sale.discountValue) || 0;
+        const discount = discounts.sale.discountType === 'percentage'
+          ? finalPrice * (discountValue / 100)
+          : discountValue;
+        
+        finalPrice = Math.max(0, finalPrice - discount);
+        totalDiscountAmount += discount;
+        
+        if (discounts.sale.discountType === 'percentage') {
+          totalDiscountPercentage += discountValue;
+        } else {
+          totalDiscountPercentage += (discount / product.price) * 100;
+        }
+        
+        activeDiscounts.push({
+          type: 'sale',
+          value: discountValue,
+          discountType: discounts.sale.discountType,
+          label: discounts.sale.discountType === 'percentage' 
+            ? `${discountValue}% Sale` 
+            : `$${discountValue.toFixed(2)} Off`
+        });
+      }
+    }
+
+    // Check bulk discount
+    if (discounts.bulk?.enabled) {
+      const discountValue = parseFloat(discounts.bulk.discountValue) || 0;
+      const discount = discounts.bulk.discountType === 'percentage'
+        ? finalPrice * (discountValue / 100)
+        : discountValue;
+
+      if (discount > 0) {
+        finalPrice = Math.max(0, finalPrice - discount);
+        totalDiscountAmount += discount;
+        
+        if (discounts.bulk.discountType === 'percentage') {
+          totalDiscountPercentage += discountValue;
+        } else {
+          totalDiscountPercentage += (discount / product.price) * 100;
+        }
+        
+        activeDiscounts.push({
+          type: 'bulk',
+          value: discountValue,
+          discountType: discounts.bulk.discountType,
+          minQuantity: discounts.bulk.minQuantity,
+          label: discounts.bulk.discountType === 'percentage'
+            ? `${discountValue}% Bulk (${discounts.bulk.minQuantity}+)`
+            : `$${discountValue.toFixed(2)} Off (${discounts.bulk.minQuantity}+)`
+        });
+      }
+    }
+
+    // Check if there's a simple discount percentage
+    if (product.discount && !isNaN(parseFloat(product.discount))) {
+      const discountValue = parseFloat(product.discount);
+      const discount = finalPrice * (discountValue / 100);
+      finalPrice = Math.max(0, finalPrice - discount);
+      totalDiscountAmount += discount;
+      totalDiscountPercentage += discountValue;
+      
+      activeDiscounts.push({
+        type: 'sale',
+        value: discountValue,
+        discountType: 'percentage',
+        label: `${discountValue}% OFF`
+      });
+    }
+
+    return {
+      finalPrice: parseFloat(finalPrice.toFixed(2)),
+      originalPrice: parseFloat(product.price),
+      activeDiscounts,
+      hasDiscount: totalDiscountAmount > 0,
+      totalDiscountPercentage: Math.round(totalDiscountPercentage),
+      totalDiscountAmount: totalDiscountAmount
+    };
+  };
+
+  const { finalPrice, originalPrice, activeDiscounts, hasDiscount, totalDiscountPercentage } = calculateDiscounts();
+
   if (loading) {
 
     return (
@@ -601,16 +707,16 @@ const ProductDetail = () => {
               <div className="flex flex-col space-y-4 mt-6">
                 {/* Price display with discounts */}
                 <div className="mt-4">
-                  {discountedPrice < product.price ? (
+                  {hasDiscount ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
-                      <span className="text-xl text-gray-500 line-through">${product.price.toFixed(2)}</span>
+                      <span className="text-3xl font-bold text-gray-900">${finalPrice.toFixed(2)}</span>
+                      <span className="text-xl text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
                       <span className="text-sm text-green-600">
-                        {((1 - discountedPrice / product.price) * 100).toFixed(0)}% OFF
+                        {totalDiscountPercentage}% OFF
                       </span>
                     </div>
                   ) : (
-                    <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                    <span className="text-3xl font-bold text-gray-900">${originalPrice.toFixed(2)}</span>
                   )}
                   {activeRules.length > 0 && (
                     <div className="mt-2 space-y-1">
