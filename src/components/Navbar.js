@@ -49,9 +49,19 @@ const Navbar = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      // Preserve existing URL parameters while adding/updating search
+      const currentParams = new URLSearchParams(location.search);
+      currentParams.set('search', searchQuery.trim());
+      
+      // Navigate to products page with search query
+      navigate({
+        pathname: '/products',
+        search: currentParams.toString()
+      });
+      
+      // Clear search and close mobile menu
       setSearchQuery('');
-      setIsMenuOpen(false); // Close mobile menu after search
+      setIsMenuOpen(false);
     }
   };
 

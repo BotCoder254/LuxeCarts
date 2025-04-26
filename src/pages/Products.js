@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { collection, query, where, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
@@ -11,6 +12,7 @@ import { fetchPricingRules } from '../store/slices/pricingSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('grid');
@@ -23,6 +25,15 @@ const Products = () => {
     inStock: false,
     onSale: false,
   });
+
+  // Handle URL search parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+  }, [location.search]);
 
   // Fetch pricing rules
   useEffect(() => {
@@ -92,37 +103,79 @@ const Products = () => {
     return () => unsubscribe();
   }, []);
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.brand?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !filters.category || product.category === filters.category;
-    const matchesStock = !filters.inStock || product.stock > 0;
-    const matchesSale = !filters.onSale || product.onSale;
+  const getFilteredProducts = () => {
+    let filtered = [...products];
 
-    let matchesPriceRange = true;
+    // Search filter
+    if (searchQuery.trim()) {
+      const searchTerms = searchQuery.toLowerCase().split(' ');
+      filtered = filtered.filter(product => {
+        const searchableFields = [
+          product.name,
+          product.description,
+          product.brand,
+          product.category,
+          ...(product.tags || []),
+          ...(product.features || [])
+        ].map(field => (field || '').toLowerCase());
+        
+        return searchTerms.every(term =>
+          searchableFields.some(field => field.includes(term))
+        );
+      });
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(product => product.category === filters.category);
+    }
+
+    // Stock filter
+    if (filters.inStock) {
+      filtered = filtered.filter(product => product.stockQuantity > 0);
+    }
+
+    // Sale filter
+    if (filters.onSale) {
+      filtered = filtered.filter(product => product.salePrice || product.bulkDiscount);
+    }
+
+    // Price range filter
     if (filters.priceRange) {
       const [min, max] = filters.priceRange.split('-').map(Number);
-      matchesPriceRange = product.price >= min && product.price <= max;
+      filtered = filtered.filter(product => {
+        const finalPrice = product.salePrice || product.price;
+        return finalPrice >= min && finalPrice <= max;
+      });
     }
 
-    return matchesSearch && matchesCategory && matchesStock && matchesSale && matchesPriceRange;
-  }).sort((a, b) => {
-    switch (filters.sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'name-asc':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'newest':
-        return b.createdAt?.seconds - a.createdAt?.seconds;
-      default:
-        return 0;
+    // Sort products
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        const aPrice = a.salePrice || a.price;
+        const bPrice = b.salePrice || b.price;
+        
+        switch (filters.sortBy) {
+          case 'price-asc':
+            return aPrice - bPrice;
+          case 'price-desc':
+            return bPrice - aPrice;
+          case 'name-asc':
+            return a.name.localeCompare(b.name);
+          case 'name-desc':
+            return b.name.localeCompare(a.name);
+          case 'newest':
+            return b.createdAt - a.createdAt;
+          default:
+            return 0;
+        }
+      });
     }
-  });
+
+    return filtered;
+  };
+
+  const filteredProducts = getFilteredProducts();
 
   if (loading) {
     return (
