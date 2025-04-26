@@ -189,22 +189,20 @@ function App() {
             path="/admin/*"
             element={
               <AdminRoute>
-                <AdminLayout>
-                  <Routes>
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="products" element={<AdminProducts />} />
-                    <Route path="products/new" element={<AdminNewProduct />} />
-                    <Route path="products/edit/:id" element={<EditProduct />} />
-                    <Route path="orders" element={<AdminOrders />} />
-                    <Route path="orders/:orderId" element={<AdminOrderDetails />} />
-                    <Route path="users" element={<AdminUsers />} />
-                    <Route path="profile" element={<UserProfile isAdmin={true} />} />
-                    <Route path="inventory" element={<InventoryAlerts />} />
-                    <Route path="security" element={<SecurityDashboard />} />
-                    <Route path="pricing" element={<PricingRules />} />
-                    <Route path="banners" element={<BannerManager />} />
-                  </Routes>
-                </AdminLayout>
+                <Routes>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="products/new" element={<AdminNewProduct />} />
+                  <Route path="products/edit/:id" element={<EditProduct />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="orders/:orderId" element={<AdminOrderDetails />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path='profile' element={<UserProfile isAdmin={true} />} />
+                  <Route path="inventory" element={<InventoryAlerts />} />
+                  <Route path="security" element={<SecurityDashboard />} />
+                  <Route path="pricing" element={<PricingRules />} />
+                  <Route path="banners" element={<BannerManager />} />
+                </Routes>
               </AdminRoute>
             }
           />

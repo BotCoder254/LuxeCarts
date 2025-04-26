@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectIsAdmin } from '../store/slices/authSlice';
-import { ROLES } from '../config/roles';
+import AdminLayout from './AdminLayout';
 
 const AdminRoute = ({ children }) => {
   const user = useSelector((state) => state.auth.user);
@@ -15,7 +15,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/" />;
   }
 
-  return children;
+  return <AdminLayout>{children}</AdminLayout>;
 };
 
 export default AdminRoute; 
