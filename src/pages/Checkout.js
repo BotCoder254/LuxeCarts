@@ -650,11 +650,25 @@ const CheckoutForm = () => {
                     />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{item.name}</p>
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {item.name}
+                    </h3>
                     <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                    {item.finalPrice && item.finalPrice < item.price && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500 line-through">
+                          ${item.price.toFixed(2)}
+                        </span>
+                        <span className="text-sm text-green-600">
+                          ${item.finalPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <p className="font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-medium text-gray-900">
+                  ${((item.finalPrice || item.price) * item.quantity).toFixed(2)}
+                </p>
               </div>
             ))}
             <div className="border-t pt-4 space-y-2">
@@ -662,6 +676,19 @@ const CheckoutForm = () => {
                 <span>Subtotal</span>
                 <span>${total.toFixed(2)}</span>
               </div>
+              {items.some(item => item.finalPrice && item.finalPrice < item.price) && (
+                <div className="flex justify-between text-sm">
+                  <span>Discounts</span>
+                  <span className="text-green-600">
+                    -${items.reduce((acc, item) => {
+                      const discount = item.finalPrice && item.finalPrice < item.price
+                        ? (item.price - item.finalPrice) * item.quantity
+                        : 0;
+                      return acc + discount;
+                    }, 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
                 <span>{total >= FREE_SHIPPING_THRESHOLD ? 'Free' : `$${SHIPPING_COST.toFixed(2)}`}</span>
