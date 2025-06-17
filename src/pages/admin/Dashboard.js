@@ -12,7 +12,7 @@ import InventoryAlerts from '../../components/admin/InventoryAlerts';
 const DashboardCard = ({ title, value, icon, link }) => (
   <Link
     to={link}
-    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow w-full"
   >
     <div className="flex items-center justify-between">
       <div>
@@ -102,20 +102,20 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="py-6">
+      <div className="py-6 w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          className="grid grid-cols-1 gap-6 w-full"
         >
           {/* Inventory Alerts Section */}
-          <div className="lg:col-span-2">
+          <div className="w-full">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Inventory Alerts</h2>
             <InventoryAlerts />
           </div>
 
           {/* Analytics Section */}
-          <div className="lg:col-span-2">
+          <div className="w-full">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Analytics Overview</h2>
             <AdminAnalytics 
               orders={allOrders}
@@ -125,39 +125,41 @@ const AdminDashboard = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <DashboardCard
-              title="Total Products"
-              value={stats.products}
-              icon={<FiPackage />}
-              link="/admin/products"
-            />
-            <DashboardCard
-              title="Total Orders"
-              value={stats.orders}
-              icon={<FiShoppingBag />}
-              link="/admin/orders"
-            />
-            <DashboardCard
-              title="Total Users"
-              value={stats.users}
-              icon={<FiUsers />}
-              link="/admin/users"
-            />
-            <DashboardCard
-              title="Total Revenue"
-              value={`$${stats.revenue.toFixed(2)}`}
-              icon={<FiDollarSign />}
-              link="/admin/orders"
-            />
+          <div className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <DashboardCard
+                title="Total Products"
+                value={stats.products}
+                icon={<FiPackage />}
+                link="/admin/products"
+              />
+              <DashboardCard
+                title="Total Orders"
+                value={stats.orders}
+                icon={<FiShoppingBag />}
+                link="/admin/orders"
+              />
+              <DashboardCard
+                title="Total Users"
+                value={stats.users}
+                icon={<FiUsers />}
+                link="/admin/users"
+              />
+              <DashboardCard
+                title="Total Revenue"
+                value={`$${stats.revenue.toFixed(2)}`}
+                icon={<FiDollarSign />}
+                link="/admin/orders"
+              />
+            </div>
           </div>
 
           {/* Recent Orders */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="w-full bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800">Recent Orders</h2>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto w-full">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

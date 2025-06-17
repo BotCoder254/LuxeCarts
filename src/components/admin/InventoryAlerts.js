@@ -39,7 +39,7 @@ const InventoryAlerts = () => {
 
   if (lowStockProducts.length === 0 && outOfStockProducts.length === 0) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-lg">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full">
         <div className="flex items-center text-green-600">
           <FiPackage className="w-6 h-6 mr-2" />
           <h3 className="text-lg font-semibold">Inventory Status: Good</h3>
@@ -53,11 +53,11 @@ const InventoryAlerts = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-6 w-full"
     >
       {/* Out of Stock Alerts */}
       {outOfStockProducts.length > 0 && (
-        <div className="bg-red-50 p-6 rounded-lg shadow-lg">
+        <div className="bg-red-50 p-6 rounded-lg shadow-lg w-full">
           <div className="flex items-center text-red-600 mb-4">
             <FiAlertTriangle className="w-6 h-6 mr-2" />
             <h3 className="text-lg font-semibold">Out of Stock Products ({outOfStockProducts.length})</h3>
@@ -91,7 +91,7 @@ const InventoryAlerts = () => {
 
       {/* Low Stock Alerts */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-amber-50 p-6 rounded-lg shadow-lg">
+        <div className="bg-amber-50 p-6 rounded-lg shadow-lg w-full">
           <div className="flex items-center text-amber-600 mb-4">
             <FiTruck className="w-6 h-6 mr-2" />
             <h3 className="text-lg font-semibold">Low Stock Products ({lowStockProducts.length})</h3>

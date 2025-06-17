@@ -71,7 +71,7 @@ const AdminAnalytics = ({ orders, users, products }) => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => (
@@ -99,10 +99,10 @@ const AdminAnalytics = ({ orders, users, products }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-6 rounded-lg shadow-lg"
+        className="bg-white p-6 rounded-lg shadow-lg w-full"
       >
         <h3 className="text-xl font-semibold mb-4 text-gray-800">Revenue Trend</h3>
-        <div className="h-[300px]">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenueTrend}>
               <defs>
@@ -131,7 +131,7 @@ const AdminAnalytics = ({ orders, users, products }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-6 rounded-lg shadow-lg"
+        className="bg-white p-6 rounded-lg shadow-lg w-full"
       >
         <h3 className="text-xl font-semibold mb-4 text-gray-800">Category Distribution</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
