@@ -4,6 +4,8 @@ import { m as motion } from 'framer-motion';
 import { FiShoppingBag, FiTruck, FiCreditCard, FiShield, FiStar, FiArrowRight } from 'react-icons/fi';
 import FeaturedProducts from '../components/FeaturedProducts';
 import SlidingBanner from '../components/SlidingBanner';
+import FlashSalesBanner from '../components/FlashSalesBanner';
+import BlogPreview from '../components/BlogPreview';
 import { toast } from 'react-hot-toast';
 
 const features = [
@@ -181,6 +183,11 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Flash Sales Section */}
+      <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FlashSalesBanner />
+      </div>
+
       {/* Featured Products Section */}
       <div className="py-16">
         <FeaturedProducts />
@@ -282,6 +289,9 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Blog Section */}
+      <BlogPreview />
 
       {/* Testimonials Section */}
       <div className="bg-gradient-to-b from-gray-50 to-white py-24 w-full">
@@ -498,24 +508,22 @@ const Home = () => {
               </ul>
             </div>
           </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-gray-800 mt-12 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400 text-sm">
-                © {new Date().getFullYear()} LuxeCart. All rights reserved.
-              </p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <Link to="/" className="text-gray-400 hover:text-white text-sm">
-                  Terms of Service
-                </Link>
-                <Link to="/" className="text-gray-400 hover:text-white text-sm">
-                  Privacy Policy
-                </Link>
-                <Link to="/" className="text-gray-400 hover:text-white text-sm">
-                  Cookie Policy
-                </Link>
-              </div>
+        </div>
+        <div className="border-t border-gray-800 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">
+              © {new Date().getFullYear()} LuxeCart. All rights reserved.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <Link to="/" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Terms of Service
+              </Link>
+              <Link to="/" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Privacy Policy
+              </Link>
+              <Link to="/" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Sitemap
+              </Link>
             </div>
           </div>
         </div>

@@ -149,6 +149,12 @@ const Navbar = () => {
                 >
                   All Products
                 </Link>
+                <Link
+                  to="/blog"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Blog
+                </Link>
                 {isAdmin && (
                   <div className="relative group">
                     <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
@@ -352,6 +358,13 @@ const Navbar = () => {
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                 >
                   All Products
+                </Link>
+                
+                <Link
+                  to="/blog"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                >
+                  Blog
                 </Link>
 
                 {/* Categories Dropdown */}

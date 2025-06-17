@@ -17,6 +17,8 @@ import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -38,6 +40,9 @@ import InventoryAlerts from './components/admin/InventoryAlerts';
 import SecurityDashboard from './pages/admin/SecurityDashboard';
 import PricingRules from './pages/admin/PricingRules';
 import BannerManager from './pages/admin/BannerManager';
+import FlashSales from './pages/admin/FlashSales';
+import BlogPosts from './pages/admin/BlogPosts';
+import Promotions from './pages/admin/Promotions';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -157,6 +162,8 @@ function App() {
           {/* User Routes */}
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route
             path="/checkout"
@@ -203,6 +210,9 @@ function App() {
                     <Route path="security" element={<SecurityDashboard />} />
                     <Route path="pricing" element={<PricingRules />} />
                     <Route path="banners" element={<BannerManager />} />
+                    <Route path="flash-sales" element={<FlashSales />} />
+                    <Route path="blogs" element={<BlogPosts />} />
+                    <Route path="promotions" element={<Promotions />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
