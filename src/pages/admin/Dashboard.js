@@ -59,11 +59,28 @@ const AdminDashboard = () => {
 
         // Fetch orders
         const ordersSnap = await getDocs(collection(db, 'orders'));
-        const orders = ordersSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date()
-        }));
+        const orders = ordersSnap.docs.map(doc => {
+          const data = doc.data();
+          let createdAtDate;
+          
+          // Safely handle the createdAt field
+          try {
+            // Check if createdAt exists and has a toDate method
+            createdAtDate = data.createdAt && typeof data.createdAt.toDate === 'function' 
+              ? data.createdAt.toDate() 
+              : new Date();
+          } catch (err) {
+            // If any error occurs, use current date as fallback
+            createdAtDate = new Date();
+          }
+          
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: createdAtDate
+          };
+        });
+        
         setAllOrders(orders);
         
         const completedOrders = orders.filter(order => order.paymentStatus === 'completed');
