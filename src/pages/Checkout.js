@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { clearCart } from '../store/slices/cartSlice';
@@ -7,6 +7,7 @@ import { db } from '../firebase/config';
 import { FiShoppingBag, FiTruck, FiLock, FiCreditCard } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import swal from 'sweetalert';
 import { inputStyles } from '../styles/commonStyles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -14,6 +15,9 @@ import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
+
+// Define a Paystack public key
+const PAYSTACK_PUBLIC_KEY = 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c';
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
@@ -40,7 +44,7 @@ const CheckoutForm = () => {
   const { items, total } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa' or 'stripe'
+  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa', 'stripe', or 'paystack'
   const stripe = useStripe();
   const elements = useElements();
   const [shippingDetails, setShippingDetails] = useState({
@@ -59,6 +63,22 @@ const CheckoutForm = () => {
   const [error, setError] = useState('');
   const [pollingInterval, setPollingInterval] = useState(null);
   const [orderRef, setOrderRef] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Add useEffect to load Paystack script
+  useEffect(() => {
+    // Load Paystack script if not already loaded
+    if (paymentMethod === 'paystack' && !window.PaystackPop) {
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      document.body.appendChild(script);
+      
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [paymentMethod]);
 
   const finalTotal = total >= FREE_SHIPPING_THRESHOLD ? total : total + SHIPPING_COST;
 
@@ -233,6 +253,123 @@ const CheckoutForm = () => {
     }
   };
 
+  const handlePaystackPayment = async (orderDocRef) => {
+    setIsLoading(true);
+    
+    try {
+      // Convert to USD cents (Paystack requires amount in smallest currency unit)
+      const finalAmountUSD = Math.round(finalTotal * 100);
+      const userEmail = shippingDetails.email;
+      const selectedMonth = new Date().toLocaleString('default', { month: 'long' });
+      const displayAmount = finalTotal.toFixed(2);
+      
+      // Function to handle successful payment
+      const processPayment = async (
+        payMethod, 
+        currency, 
+        responseReference, 
+        responseTrans, 
+        selectedMonth, 
+        finalAmount, 
+        displayAmount
+      ) => {
+        try {
+          // Update order with payment details
+          await updateDoc(orderDocRef, {
+            status: 'processing',
+            paymentStatus: 'completed',
+            updatedAt: serverTimestamp(),
+            isVisible: true,
+            paymentMethod: payMethod,
+            paymentDetails: {
+              currency: currency,
+              reference: responseReference,
+              transaction: responseTrans,
+              month: selectedMonth,
+              amount: finalAmount,
+              displayAmount: displayAmount
+            }
+          });
+          
+          // Clear cart and navigate to success page
+          dispatch(clearCart());
+          navigate('/order-success', {
+            state: {
+              orderId: orderDocRef.id,
+              total: finalTotal,
+            }
+          });
+          toast.success('Payment successful! Order placed.');
+        } catch (error) {
+          console.error('Error updating order after payment:', error);
+          swal('Error', 'There was a problem processing your payment', 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      // Initialize Paystack payment
+      if (window.PaystackPop) {
+        const handler = window.PaystackPop.setup({
+          key: PAYSTACK_PUBLIC_KEY || 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c',
+          email: userEmail,
+          amount: finalAmountUSD,
+          currency: "USD",
+          callback: function(response) {
+            if (response.status === 'success') {
+              // Proceed with your logic, e.g., updating the database or displaying a success message
+              const payMethod = "Paystack - USD";
+              const currency = "USD";
+              const responseReference = response.reference;
+              const responseTrans = response.trans;
+              
+              processPayment(
+                payMethod, 
+                currency, 
+                responseReference, 
+                responseTrans, 
+                selectedMonth, 
+                finalTotal, 
+                displayAmount
+              );
+            } else {
+              swal('Payment Error', 'Payment failed or was not successful', 'error');
+              setIsLoading(false);
+            }
+          },
+          onClose: function() {
+            // Handle payment cancellation
+            swal('Payment Error', 'Transaction was not completed, action canceled', 'error');
+            setIsLoading(false);
+          }
+        });
+
+        // Open the Paystack payment modal
+        handler.openIframe();
+      } else {
+        throw new Error('Paystack not loaded');
+      }
+    } catch (error) {
+      console.error('Paystack payment error:', error);
+      swal('Payment Error', error.message || 'Failed to initialize payment', 'error');
+      setIsLoading(false);
+      
+      // Update order status if payment failed
+      if (orderDocRef) {
+        try {
+          await updateDoc(orderDocRef, {
+            status: 'payment_failed',
+            paymentStatus: 'failed',
+            error: error.message,
+            updatedAt: serverTimestamp()
+          });
+        } catch (updateError) {
+          console.error('Failed to update order status:', updateError);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -246,6 +383,33 @@ const CheckoutForm = () => {
 
     if (paymentMethod === 'stripe') {
       await handleStripePayment();
+    } else if (paymentMethod === 'paystack') {
+      setLoading(true);
+      setError('');
+
+      try {
+        // Create order first with pending status
+        const orderDocRef = await addDoc(collection(db, 'orders'), {
+          userId: user.uid,
+          items,
+          total: finalTotal,
+          shippingDetails,
+          paymentStatus: 'pending',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          isVisible: false,
+          paymentMethod: 'paystack'
+        });
+
+        setOrderRef(orderDocRef);
+        // Process payment with Paystack
+        await handlePaystackPayment(orderDocRef);
+        
+      } catch (error) {
+        console.error('Checkout error:', error);
+        toast.error(error.message || 'An error occurred during checkout. Please try again.');
+        setLoading(false);
+      }
     } else {
       setLoading(true);
       setError('');
@@ -601,6 +765,17 @@ const CheckoutForm = () => {
               >
                 Credit Card
               </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('paystack')}
+                className={`flex-1 py-2 px-4 rounded-md ${
+                  paymentMethod === 'paystack'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                Paystack
+              </button>
             </div>
 
             {paymentMethod === 'mpesa' ? (
@@ -614,13 +789,19 @@ const CheckoutForm = () => {
                   </p>
                 </div>
               </div>
-            ) : (
+            ) : paymentMethod === 'stripe' ? (
               <div className="space-y-4">
                 <div className="p-4 border rounded-md">
                   <CardElement options={cardElementStyle} />
                 </div>
                 <p className="text-sm text-gray-600">
                   Your card will be charged securely through Stripe.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Payment will be processed through Paystack.
                 </p>
               </div>
             )}
@@ -703,14 +884,16 @@ const CheckoutForm = () => {
 
         <button
           type="submit"
-          disabled={loading || (paymentMethod === 'stripe' && !stripe)}
+          disabled={loading || (paymentMethod === 'stripe' && !stripe) || (paymentMethod === 'paystack' && isLoading)}
           className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading
             ? 'Processing...'
             : paymentMethod === 'mpesa'
             ? `Pay KES ${finalTotal.toFixed(2)} with M-Pesa`
-            : `Pay $${finalTotal.toFixed(2)} with Card`}
+            : paymentMethod === 'stripe'
+            ? `Pay $${finalTotal.toFixed(2)} with Card`
+            : 'Pay with Paystack'}
         </button>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
