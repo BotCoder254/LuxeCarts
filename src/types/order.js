@@ -21,6 +21,11 @@ export const OrderType = {
     country: String,
     phone: String,
   },
+  isPickupInStore: Boolean,
+  selectedStore: String,
+  hasInsurance: Boolean,
+  insuranceCost: Number,
+  shippingCost: Number,
   createdAt: Date,
   updatedAt: Date,
 }; 

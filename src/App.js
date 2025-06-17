@@ -43,6 +43,8 @@ import BannerManager from './pages/admin/BannerManager';
 import FlashSales from './pages/admin/FlashSales';
 import BlogPosts from './pages/admin/BlogPosts';
 import Promotions from './pages/admin/Promotions';
+import PickupLocations from './pages/admin/PickupLocations';
+import InsuranceManagement from './pages/admin/InsuranceManagement';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -213,6 +215,8 @@ function App() {
                     <Route path="flash-sales" element={<FlashSales />} />
                     <Route path="blogs" element={<BlogPosts />} />
                     <Route path="promotions" element={<Promotions />} />
+                    <Route path="pickup-locations" element={<PickupLocations />} />
+                    <Route path="insurance" element={<InsuranceManagement />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>

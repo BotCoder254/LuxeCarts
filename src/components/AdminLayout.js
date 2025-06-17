@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock } from 'react-icons/fi';
+import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock, FiMapPin, FiTruck } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -23,6 +23,8 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/flash-sales', icon: <FiClock className="w-6 h-6" />, label: 'Flash Sales' },
     { path: '/admin/blogs', icon: <FiFileText className="w-6 h-6" />, label: 'Blog Posts' },
     { path: '/admin/promotions', icon: <FiPercent className="w-6 h-6" />, label: 'Promotions' },
+    { path: '/admin/pickup-locations', icon: <FiMapPin className="w-6 h-6" />, label: 'Pickup Locations' },
+    { path: '/admin/insurance', icon: <FiShield className="w-6 h-6" />, label: 'Insurance Plans' },
     { path: '/admin/security', icon: <FiShield className="w-6 h-6" />, label: 'Security' },
     { path: '/admin/pricing', icon: <FiTag className="w-6 h-6" />, label: 'Pricing Rules' },
     { path: '/admin/profile', icon: <FiUser className="w-6 h-6" />, label: 'Profile' },

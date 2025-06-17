@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { clearCart } from '../store/slices/cartSlice';
-import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { FiShoppingBag, FiTruck, FiLock, FiCreditCard } from 'react-icons/fi';
+import { FiShoppingBag, FiTruck, FiLock, FiCreditCard, FiMapPin, FiShield } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import swal from 'sweetalert';
@@ -21,6 +21,7 @@ const PAYSTACK_PUBLIC_KEY = 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c';
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
+const INSURANCE_RATE = 0.05; // 5% of order total
 
 // Stripe Card Element styles
 const cardElementStyle = {
@@ -64,23 +65,71 @@ const CheckoutForm = () => {
   const [pollingInterval, setPollingInterval] = useState(null);
   const [orderRef, setOrderRef] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPickupInStore, setIsPickupInStore] = useState(false);
+  const [addShipmentInsurance, setAddShipmentInsurance] = useState(false);
+  const [selectedStore, setSelectedStore] = useState('');
+  const [pickupLocations, setPickupLocations] = useState([]);
+  const [insurancePlans, setInsurancePlans] = useState([]);
+  const [selectedInsurancePlan, setSelectedInsurancePlan] = useState('');
+  const [insuranceRate, setInsuranceRate] = useState(0.05); // Default 5%
 
-  // Add useEffect to load Paystack script
+  // Fetch pickup locations and insurance plans from Firestore
   useEffect(() => {
-    // Load Paystack script if not already loaded
-    if (paymentMethod === 'paystack' && !window.PaystackPop) {
-      const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
-      script.async = true;
-      document.body.appendChild(script);
-      
-      return () => {
-        document.body.removeChild(script);
-      };
-    }
-  }, [paymentMethod]);
+    const fetchPickupLocations = async () => {
+      try {
+        const q = query(collection(db, 'pickupLocations'));
+        const querySnapshot = await getDocs(q);
+        const locations = [];
+        querySnapshot.forEach((doc) => {
+          const location = { id: doc.id, ...doc.data() };
+          if (location.isActive !== false) {
+            locations.push(location);
+          }
+        });
+        setPickupLocations(locations);
+      } catch (error) {
+        console.error('Error fetching pickup locations:', error);
+      }
+    };
 
-  const finalTotal = total >= FREE_SHIPPING_THRESHOLD ? total : total + SHIPPING_COST;
+    const fetchInsurancePlans = async () => {
+      try {
+        const q = query(collection(db, 'insurancePlans'));
+        const querySnapshot = await getDocs(q);
+        const plans = [];
+        querySnapshot.forEach((doc) => {
+          const plan = { id: doc.id, ...doc.data() };
+          if (plan.isActive !== false) {
+            plans.push(plan);
+          }
+        });
+        setInsurancePlans(plans);
+        
+        // Set default insurance plan if available
+        if (plans.length > 0) {
+          const defaultPlan = plans[0];
+          setSelectedInsurancePlan(defaultPlan.id);
+          setInsuranceRate(defaultPlan.isPercentage ? defaultPlan.rate / 100 : defaultPlan.rate);
+        }
+      } catch (error) {
+        console.error('Error fetching insurance plans:', error);
+      }
+    };
+
+    fetchPickupLocations();
+    fetchInsurancePlans();
+  }, []);
+
+  // Calculate shipping cost based on pickup option
+  const shippingCost = isPickupInStore ? 0 : (total >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST);
+  
+  // Calculate insurance cost if selected
+  const selectedPlan = insurancePlans.find(plan => plan.id === selectedInsurancePlan);
+  const insuranceCost = addShipmentInsurance && selectedPlan ? 
+    (selectedPlan.isPercentage ? Math.round((total * (selectedPlan.rate / 100)) * 100) / 100 : selectedPlan.rate) : 0;
+  
+  // Calculate final total including shipping and insurance
+  const finalTotal = total + shippingCost + insuranceCost;
 
   const handleShippingChange = (e) => {
     const { name, value } = e.target;
@@ -90,7 +139,7 @@ const CheckoutForm = () => {
     }));
   };
 
-  const handleStripePayment = async () => {
+  const handleStripePayment = async (pickupLocation, insurancePlan) => {
     if (!stripe || !elements) {
       return;
     }
@@ -109,7 +158,24 @@ const CheckoutForm = () => {
         status: 'pending',
         createdAt: serverTimestamp(),
         isVisible: false,
-        paymentMethod: 'stripe'
+        paymentMethod: 'stripe',
+        isPickupInStore,
+        pickupLocation: isPickupInStore ? {
+          id: pickupLocation.id,
+          name: pickupLocation.name,
+          address: pickupLocation.address,
+          city: pickupLocation.city,
+          state: pickupLocation.state
+        } : null,
+        hasInsurance: addShipmentInsurance,
+        insurancePlan: addShipmentInsurance ? {
+          id: insurancePlan.id,
+          name: insurancePlan.name,
+          rate: insurancePlan.rate,
+          isPercentage: insurancePlan.isPercentage
+        } : null,
+        insuranceCost: addShipmentInsurance ? insuranceCost : 0,
+        shippingCost
       });
 
       setOrderRef(orderDocRef);
@@ -374,15 +440,30 @@ const CheckoutForm = () => {
     e.preventDefault();
 
     // Validate form fields
-    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone || 
-        !shippingDetails.address || !shippingDetails.city || !shippingDetails.state || 
-        !shippingDetails.zipCode || !shippingDetails.country) {
+    if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone) {
+      toast.error('Please fill in all required contact details.');
+      return;
+    }
+    
+    // Validate shipping address fields if not pickup in store
+    if (!isPickupInStore && (!shippingDetails.address || !shippingDetails.city || 
+        !shippingDetails.state || !shippingDetails.zipCode || !shippingDetails.country)) {
       toast.error('Please fill in all shipping details.');
       return;
     }
+    
+    // Validate store selection if pickup in store
+    if (isPickupInStore && !selectedStore) {
+      toast.error('Please select a store for pickup.');
+      return;
+    }
+
+    // Get selected pickup location and insurance plan details
+    const pickupLocation = isPickupInStore ? pickupLocations.find(loc => loc.id === selectedStore) : null;
+    const insurancePlan = addShipmentInsurance ? insurancePlans.find(plan => plan.id === selectedInsurancePlan) : null;
 
     if (paymentMethod === 'stripe') {
-      await handleStripePayment();
+      await handleStripePayment(pickupLocation, insurancePlan);
     } else if (paymentMethod === 'paystack') {
       setLoading(true);
       setError('');
@@ -398,7 +479,24 @@ const CheckoutForm = () => {
           status: 'pending',
           createdAt: serverTimestamp(),
           isVisible: false,
-          paymentMethod: 'paystack'
+          paymentMethod: 'paystack',
+          isPickupInStore,
+          pickupLocation: isPickupInStore ? {
+            id: pickupLocation.id,
+            name: pickupLocation.name,
+            address: pickupLocation.address,
+            city: pickupLocation.city,
+            state: pickupLocation.state
+          } : null,
+          hasInsurance: addShipmentInsurance,
+          insurancePlan: addShipmentInsurance ? {
+            id: insurancePlan.id,
+            name: insurancePlan.name,
+            rate: insurancePlan.rate,
+            isPercentage: insurancePlan.isPercentage
+          } : null,
+          insuranceCost: addShipmentInsurance ? insuranceCost : 0,
+          shippingCost
         });
 
         setOrderRef(orderDocRef);
@@ -426,7 +524,24 @@ const CheckoutForm = () => {
           paymentStatus: 'pending',
           status: 'pending',
           createdAt: serverTimestamp(),
-          isVisible: false // Hide from admin until payment is successful
+          isVisible: false, // Hide from admin until payment is successful
+          isPickupInStore,
+          pickupLocation: isPickupInStore ? {
+            id: pickupLocation.id,
+            name: pickupLocation.name,
+            address: pickupLocation.address,
+            city: pickupLocation.city,
+            state: pickupLocation.state
+          } : null,
+          hasInsurance: addShipmentInsurance,
+          insurancePlan: addShipmentInsurance ? {
+            id: insurancePlan.id,
+            name: insurancePlan.name,
+            rate: insurancePlan.rate,
+            isPercentage: insurancePlan.isPercentage
+          } : null,
+          insuranceCost: addShipmentInsurance ? insuranceCost : 0,
+          shippingCost
         });
 
         newOrderRef = orderDocRef;
@@ -622,11 +737,11 @@ const CheckoutForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Shipping Details */}
+      {/* Left Column - Customer Information */}
       <div className="space-y-6 w-full">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <FiTruck className="mr-2" /> Shipping Information
+            Contact Information
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:gap-6">
             <div className="w-full">
@@ -670,69 +785,207 @@ const CheckoutForm = () => {
                 </p>
               </div>
             </div>
-            <div className="w-full">
-              <label className={inputStyles.label}>Address</label>
-              <textarea
-                name="address"
-                required
-                value={shippingDetails.address}
-                onChange={handleShippingChange}
-                className={`${inputStyles.textarea} w-full`}
-                placeholder="Enter your street address"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="w-full">
-                <label className={inputStyles.label}>City</label>
+          </div>
+        </div>
+        
+        {/* Delivery Options */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            Delivery Options
+          </h3>
+          
+          <div className="space-y-4">
+            {/* Shipping vs Pickup Toggle */}
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center">
                 <input
-                  type="text"
-                  name="city"
-                  required
-                  value={shippingDetails.city}
-                  onChange={handleShippingChange}
-                  className={`${inputStyles.base} w-full`}
-                  placeholder="Enter your city"
+                  type="radio"
+                  id="shipping"
+                  name="deliveryMethod"
+                  checked={!isPickupInStore}
+                  onChange={() => setIsPickupInStore(false)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                 />
+                <label htmlFor="shipping" className="ml-2 block text-sm text-gray-700 flex items-center">
+                  <FiTruck className="mr-2" /> Ship to my address
+                </label>
               </div>
-              <div className="w-full">
-                <label className={inputStyles.label}>State</label>
+              
+              <div className="flex items-center">
                 <input
-                  type="text"
-                  name="state"
-                  required
-                  value={shippingDetails.state}
-                  onChange={handleShippingChange}
-                  className={`${inputStyles.base} w-full`}
-                  placeholder="Enter your state"
+                  type="radio"
+                  id="pickup"
+                  name="deliveryMethod"
+                  checked={isPickupInStore}
+                  onChange={() => setIsPickupInStore(true)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                 />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="w-full">
-                <label className={inputStyles.label}>ZIP Code</label>
-                <input
-                  type="text"
-                  name="zipCode"
-                  required
-                  value={shippingDetails.zipCode}
-                  onChange={handleShippingChange}
-                  className={`${inputStyles.base} w-full`}
-                  placeholder="Enter your ZIP code"
-                />
-              </div>
-              <div className="w-full">
-                <label className={inputStyles.label}>Country</label>
-                <input
-                  type="text"
-                  name="country"
-                  required
-                  value={shippingDetails.country}
-                  onChange={handleShippingChange}
-                  className={`${inputStyles.base} w-full`}
-                  placeholder="Enter your country"
-                />
+                <label htmlFor="pickup" className="ml-2 block text-sm text-gray-700 flex items-center">
+                  <FiMapPin className="mr-2" /> Pick up in store
+                </label>
               </div>
             </div>
+            
+            {/* Store Selection for Pickup */}
+            {isPickupInStore && (
+              <div className="mt-4 pl-6 border-l-2 border-indigo-100">
+                <label htmlFor="store" className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Store Location
+                </label>
+                <select
+                  id="store"
+                  name="store"
+                  value={selectedStore}
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  className={`${inputStyles.base} w-full`}
+                  required={isPickupInStore}
+                >
+                  <option value="">Select a store</option>
+                  {pickupLocations.map(location => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {location.address}, {location.city}
+                    </option>
+                  ))}
+                </select>
+                {pickupLocations.length === 0 && (
+                  <p className="mt-2 text-sm text-yellow-600">
+                    No pickup locations available. Please choose shipping or try again later.
+                  </p>
+                )}
+                {selectedStore && (
+                  <p className="mt-2 text-sm text-green-600">
+                    Ready for pickup within 24 hours. We'll email you when your order is ready.
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Shipping Address Fields */}
+            {!isPickupInStore && (
+              <div className="mt-4 space-y-4">
+                <div className="w-full">
+                  <label className={inputStyles.label}>Address</label>
+                  <textarea
+                    name="address"
+                    required={!isPickupInStore}
+                    value={shippingDetails.address}
+                    onChange={handleShippingChange}
+                    className={`${inputStyles.textarea} w-full`}
+                    placeholder="Enter your street address"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="w-full">
+                    <label className={inputStyles.label}>City</label>
+                    <input
+                      type="text"
+                      name="city"
+                      required={!isPickupInStore}
+                      value={shippingDetails.city}
+                      onChange={handleShippingChange}
+                      className={`${inputStyles.base} w-full`}
+                      placeholder="Enter your city"
+                    />
+                  </div>
+                  <div className="w-full">
+                    <label className={inputStyles.label}>State</label>
+                    <input
+                      type="text"
+                      name="state"
+                      required={!isPickupInStore}
+                      value={shippingDetails.state}
+                      onChange={handleShippingChange}
+                      className={`${inputStyles.base} w-full`}
+                      placeholder="Enter your state"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="w-full">
+                    <label className={inputStyles.label}>ZIP Code</label>
+                    <input
+                      type="text"
+                      name="zipCode"
+                      required={!isPickupInStore}
+                      value={shippingDetails.zipCode}
+                      onChange={handleShippingChange}
+                      className={`${inputStyles.base} w-full`}
+                      placeholder="Enter your ZIP code"
+                    />
+                  </div>
+                  <div className="w-full">
+                    <label className={inputStyles.label}>Country</label>
+                    <input
+                      type="text"
+                      name="country"
+                      required={!isPickupInStore}
+                      value={shippingDetails.country}
+                      onChange={handleShippingChange}
+                      className={`${inputStyles.base} w-full`}
+                      placeholder="Enter your country"
+                    />
+                  </div>
+                </div>
+                
+                {/* Shipment Insurance Option */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="insurance"
+                        name="insurance"
+                        type="checkbox"
+                        checked={addShipmentInsurance}
+                        onChange={() => setAddShipmentInsurance(!addShipmentInsurance)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="insurance" className="font-medium text-gray-700 flex items-center">
+                        <FiShield className="mr-2 text-indigo-600" /> Add Shipment Insurance
+                      </label>
+                      <p className="text-gray-500">
+                        Protect your order against loss, damage, or theft during shipping
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Insurance Plan Selection */}
+                  {addShipmentInsurance && insurancePlans.length > 0 && (
+                    <div className="mt-3 pl-7">
+                      <label htmlFor="insurancePlan" className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Insurance Plan
+                      </label>
+                      <select
+                        id="insurancePlan"
+                        name="insurancePlan"
+                        value={selectedInsurancePlan}
+                        onChange={(e) => setSelectedInsurancePlan(e.target.value)}
+                        className={`${inputStyles.base} w-full`}
+                        required={addShipmentInsurance}
+                      >
+                        {insurancePlans.map(plan => (
+                          <option key={plan.id} value={plan.id}>
+                            {plan.name} - {plan.isPercentage ? `${plan.rate}%` : `$${plan.rate}`}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedInsurancePlan && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          Insurance cost: ${insuranceCost.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {addShipmentInsurance && insurancePlans.length === 0 && (
+                    <p className="mt-2 text-sm text-yellow-600 pl-7">
+                      No insurance plans available. Please try again later.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -872,8 +1125,14 @@ const CheckoutForm = () => {
               )}
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>{total >= FREE_SHIPPING_THRESHOLD ? 'Free' : `$${SHIPPING_COST.toFixed(2)}`}</span>
+                <span>{isPickupInStore ? 'Free (Pick-up)' : (shippingCost > 0 ? `$${shippingCost.toFixed(2)}` : 'Free')}</span>
               </div>
+              {addShipmentInsurance && (
+                <div className="flex justify-between text-sm">
+                  <span>Shipment Insurance</span>
+                  <span>${insuranceCost.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-lg border-t pt-2">
                 <span>Total</span>
                 <span>${finalTotal.toFixed(2)}</span>

@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { useSelector } from 'react-redux';
-import { FiShoppingBag, FiDownload, FiEye, FiX } from 'react-icons/fi';
+import { useSelector, useDispatch } from 'react-redux';
+import { FiShoppingBag, FiDownload, FiEye, FiX, FiRefreshCw, FiMapPin, FiTruck, FiShield } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { addToCart } from '../store/slices/cartSlice';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     let unsubscribe;
@@ -101,6 +103,20 @@ const Orders = () => {
       console.error('Error canceling order:', error);
       toast.error('Failed to cancel order');
     }
+  };
+  
+  const handleReorder = (order) => {
+    if (!order || !order.items || order.items.length === 0) {
+      toast.error('Cannot reorder: No items found in this order');
+      return;
+    }
+
+    // Add all items from the order to the cart
+    order.items.forEach(item => {
+      dispatch(addToCart(item));
+    });
+
+    toast.success('All items added to your cart');
   };
 
   const generateReceipt = (order) => {
@@ -197,6 +213,13 @@ const Orders = () => {
                     </p>
                   </div>
                   <div className="flex space-x-4">
+                    <button
+                      onClick={() => handleReorder(order)}
+                      className="flex items-center text-indigo-600 hover:text-indigo-900"
+                    >
+                      <FiRefreshCw className="mr-1" />
+                      Reorder
+                    </button>
                     {order.paymentStatus === 'completed' && (
                       <button
                         onClick={() => generateReceipt(order)}
@@ -250,13 +273,47 @@ const Orders = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">Items</p>
-                      <p className="mt-1 text-sm text-gray-900">{order.items.length} items</p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {order.items.reduce((total, item) => total + item.quantity, 0)} items
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total</p>
-                      <p className="mt-1 text-sm text-gray-900">${order.total.toFixed(2)}</p>
+                      <p className="mt-1 text-sm text-gray-600">${order.total.toFixed(2)}</p>
                     </div>
                   </div>
+                </div>
+                
+                {/* Display pickup or delivery info */}
+                <div className="mt-4 pt-2 border-t">
+                  <p className="text-sm text-gray-600">
+                    {order.isPickupInStore ? (
+                      <span className="flex items-center">
+                        <FiMapPin className="mr-1 text-indigo-600" /> 
+                        Pickup in store
+                        {order.pickupLocation && (
+                          <span className="ml-2">
+                            - {order.pickupLocation.name}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <FiTruck className="mr-1" /> 
+                        Standard delivery
+                        {order.hasInsurance && (
+                          <span className="ml-2 text-indigo-600 flex items-center">
+                            <FiShield className="mr-1" /> Insured
+                            {order.insurancePlan && (
+                              <span className="ml-1">
+                                ({order.insurancePlan.name})
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             ))}
@@ -264,16 +321,16 @@ const Orders = () => {
         ) : (
           <div className="text-center py-12">
             <FiShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
+            <h3 className="mt-2 text-lg font-medium text-gray-900">No orders yet</h3>
             <p className="mt-1 text-sm text-gray-500">
-              You haven't placed any orders yet.
+              Start shopping to see your orders here.
             </p>
             <div className="mt-6">
               <Link
                 to="/products"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                Start Shopping
+                Browse Products
               </Link>
             </div>
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { FiShoppingBag, FiUser, FiTruck } from 'react-icons/fi';
+import { FiShoppingBag, FiUser, FiTruck, FiMapPin, FiShield } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
 const AdminOrderDetails = () => {
@@ -10,6 +10,13 @@ const AdminOrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Store locations for pickup reference
+  const storeLocations = [
+    { id: 'store1', name: 'Downtown Store', address: '123 Main St, Downtown' },
+    { id: 'store2', name: 'Westside Mall', address: '456 West Ave, Westside Mall' },
+    { id: 'store3', name: 'Eastside Plaza', address: '789 East Blvd, Eastside Plaza' },
+  ];
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -30,6 +37,14 @@ const AdminOrderDetails = () => {
 
     fetchOrder();
   }, [orderId]);
+  
+  // Get store details if this is a pickup order
+  const getStoreDetails = () => {
+    if (!order?.isPickupInStore || !order?.selectedStore) return null;
+    return storeLocations.find(store => store.id === order.selectedStore) || null;
+  };
+  
+  const storeDetails = order?.isPickupInStore ? getStoreDetails() : null;
 
   if (loading) {
     return (
@@ -91,6 +106,30 @@ const AdminOrderDetails = () => {
                     {order.createdAt?.toDate().toLocaleDateString()}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Delivery Method:</span>
+                  <span className="font-medium flex items-center">
+                    {order.isPickupInStore ? (
+                      <>
+                        <FiMapPin className="mr-1 text-indigo-600" /> Pickup In-Store
+                      </>
+                    ) : (
+                      <>
+                        <FiTruck className="mr-1" /> Standard Delivery
+                        {order.hasInsurance && (
+                          <span className="ml-2 text-indigo-600 flex items-center">
+                            <FiShield className="mr-1" /> Insured
+                            {order.insurancePlan && (
+                              <span className="ml-1">
+                                ({order.insurancePlan.name})
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -115,34 +154,94 @@ const AdminOrderDetails = () => {
               </div>
             </div>
 
-            {/* Shipping Information */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <FiTruck className="mr-2" /> Shipping Information
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Address:</span>
-                  <span className="font-medium text-right">{order.shippingDetails.address}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">City:</span>
-                  <span className="font-medium">{order.shippingDetails.city}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">State:</span>
-                  <span className="font-medium">{order.shippingDetails.state}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">ZIP Code:</span>
-                  <span className="font-medium">{order.shippingDetails.zipCode}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Country:</span>
-                  <span className="font-medium">{order.shippingDetails.country}</span>
+            {/* Shipping Information or Pickup Information */}
+            {order.isPickupInStore ? (
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <FiMapPin className="mr-2" /> Pickup Information
+                </h3>
+                {order.pickupLocation ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Store:</span>
+                      <span className="font-medium">{order.pickupLocation.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Address:</span>
+                      <span className="font-medium text-right">{order.pickupLocation.address}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location:</span>
+                      <span className="font-medium text-right">
+                        {order.pickupLocation.city}, {order.pickupLocation.state}
+                      </span>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-sm text-gray-600">
+                        Customer will pick up in-store. Please have order ready for collection.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">Store information not available</p>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <FiTruck className="mr-2" /> Shipping Information
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Address:</span>
+                    <span className="font-medium text-right">{order.shippingDetails.address}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">City:</span>
+                    <span className="font-medium">{order.shippingDetails.city}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">State:</span>
+                    <span className="font-medium">{order.shippingDetails.state}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">ZIP Code:</span>
+                    <span className="font-medium">{order.shippingDetails.zipCode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Country:</span>
+                    <span className="font-medium">{order.shippingDetails.country}</span>
+                  </div>
+                  
+                  {order.hasInsurance && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 flex items-center">
+                          <FiShield className="mr-1 text-indigo-600" /> Shipment Insurance:
+                        </span>
+                        <span className="font-medium text-indigo-600">
+                          ${order.insuranceCost?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      {order.insurancePlan && (
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-gray-600">Plan:</span>
+                          <span className="font-medium">
+                            {order.insurancePlan.name} 
+                            ({order.insurancePlan.isPercentage 
+                              ? `${order.insurancePlan.rate}%` 
+                              : `$${order.insurancePlan.rate}`})
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-600 mt-2">
+                        This order is insured against loss, damage, or theft during shipping.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Order Items and Summary */}
@@ -156,9 +255,13 @@ const AdminOrderDetails = () => {
                   <div key={item.id} className="flex justify-between items-center">
                     <div className="flex items-center">
                       <img
-                        src={item.image}
+                        src={item.image || item.images?.[0] || 'https://via.placeholder.com/150?text=No+Image'}
                         alt={item.name}
                         className="h-16 w-16 object-cover rounded"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                        }}
                       />
                       <div className="ml-4">
                         <p className="font-medium">{item.name}</p>
@@ -173,6 +276,18 @@ const AdminOrderDetails = () => {
                     <span>Subtotal</span>
                     <span>${order.total.toFixed(2)}</span>
                   </div>
+                  {order.shippingCost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Shipping</span>
+                      <span>${order.shippingCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {order.hasInsurance && order.insuranceCost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Insurance</span>
+                      <span>${order.insuranceCost.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-semibold text-lg border-t pt-2">
                     <span>Total</span>
                     <span>${order.total.toFixed(2)}</span>
