@@ -226,6 +226,50 @@ const ProductDetail = () => {
           currentRules.push(rule);
         }
       });
+      
+      // Check if there's a direct discount on the product
+      if (product.discount && !isNaN(parseFloat(product.discount))) {
+        const discountValue = parseFloat(product.discount);
+        const discount = product.price * (discountValue / 100);
+        finalPrice = Math.max(0, product.price - discount);
+        
+        // Add to active rules
+        currentRules.push({
+          type: 'sale',
+          name: `${discountValue}% OFF`,
+          discountType: 'percentage',
+          discountValue: discountValue
+        });
+      }
+      
+      // Check for discounts object in product (similar to ProductCard)
+      const discounts = product.discounts || {};
+      
+      // Check sale discount
+      if (discounts.sale?.enabled) {
+        const now = new Date();
+        const startDate = discounts.sale.startDate ? new Date(discounts.sale.startDate) : null;
+        const endDate = discounts.sale.endDate ? new Date(discounts.sale.endDate) : null;
+
+        if ((!startDate || now >= startDate) && (!endDate || now <= endDate)) {
+          const discountValue = parseFloat(discounts.sale.discountValue) || 0;
+          const discount = discounts.sale.discountType === 'percentage'
+            ? product.price * (discountValue / 100)
+            : discountValue;
+          
+          finalPrice = Math.max(0, product.price - discount);
+          
+          // Add to active rules
+          currentRules.push({
+            type: 'sale',
+            name: discounts.sale.discountType === 'percentage' 
+              ? `${discountValue}% Sale` 
+              : `$${discountValue.toFixed(2)} Off`,
+            discountType: discounts.sale.discountType,
+            discountValue: discountValue
+          });
+        }
+      }
 
       setDiscountedPrice(Math.max(0, finalPrice));
       setActiveRules(currentRules);
@@ -255,15 +299,11 @@ const ProductDetail = () => {
     }
 
     dispatch(addToCart({
-
       ...product,
-
       quantity,
-
       selectedSize,
-
       selectedColor,
-
+      finalPrice: discountedPrice,
     }));
 
     toast.success('Added to cart!');
