@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiDownload, FiEye, FiX, FiRefreshCw, FiMapPin, FiTruck, FiShield } from 'react-icons/fi';
+import { FiShoppingBag, FiDownload, FiEye, FiX, FiRefreshCw, FiMapPin, FiTruck, FiShield, FiEdit } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -93,9 +93,11 @@ const Orders = () => {
     try {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
-        status: 'canceled',
+        status: 'cancelled',
         paymentStatus: 'canceled',
         isVisible: false,
+        cancelReason: 'Canceled by user',
+        cancelDate: new Date(),
         updatedAt: new Date()
       });
       toast.success('Order canceled successfully');
@@ -119,29 +121,43 @@ const Orders = () => {
     toast.success('All items added to your cart');
   };
 
-  const generateReceipt = (order) => {
+  // Improved invoice generation with custom styling
+  const generateInvoice = (order) => {
     try {
       const doc = new jsPDF();
       
-      // Add receipt header
+      // Add receipt header with better styling
       doc.setFontSize(20);
-      doc.text('Order Receipt', 105, 20, { align: 'center' });
+      doc.setTextColor(79, 70, 229); // Indigo color
+      doc.text('LuxeCarts Invoice', 105, 20, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      
+      // Add logo placeholder (would be replaced with actual logo)
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, 30, 40, 15, 'F');
+      doc.setFontSize(8);
+      doc.text('LOGO', 40, 40, { align: 'center' });
       
       // Add order details
       doc.setFontSize(12);
-      doc.text(`Order ID: #${order.id.slice(-6)}`, 20, 40);
-      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`, 20, 50);
-      doc.text(`Customer: ${order.shippingDetails.name}`, 20, 60);
-      doc.text(`Email: ${order.shippingDetails.email}`, 20, 70);
-      doc.text(`Phone: ${order.shippingDetails.phone}`, 20, 80);
+      doc.text(`Invoice #: INV-${order.id.slice(-6)}`, 20, 55);
+      doc.text(`Order #: ${order.id.slice(-6)}`, 20, 62);
+      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`, 20, 69);
+      
+      // Add customer details on the right
+      doc.text(`Bill To:`, 140, 55);
+      doc.text(`${order.shippingDetails.name}`, 140, 62);
+      doc.text(`${order.shippingDetails.email}`, 140, 69);
+      doc.text(`${order.shippingDetails.phone}`, 140, 76);
       
       // Add shipping address
-      doc.text('Shipping Address:', 20, 95);
-      doc.text(order.shippingDetails.address, 20, 105);
-      doc.text(`${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}`, 20, 115);
-      doc.text(order.shippingDetails.country, 20, 125);
+      doc.text('Shipping Address:', 20, 83);
+      doc.setFontSize(10);
+      doc.text(order.shippingDetails.address, 20, 90);
+      doc.text(`${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}`, 20, 97);
+      doc.text(order.shippingDetails.country, 20, 104);
       
-      // Add items table
+      // Add items table with better styling
       const tableData = order.items.map(item => [
         item.name,
         item.quantity,
@@ -150,26 +166,64 @@ const Orders = () => {
       ]);
       
       doc.autoTable({
-        startY: 140,
+        startY: 115,
         head: [['Item', 'Quantity', 'Price', 'Total']],
         body: tableData,
         foot: [
+          ['', '', 'Subtotal:', `$${order.total.toFixed(2)}`],
+          ['', '', 'Shipping:', `${order.shippingCost > 0 ? `$${order.shippingCost.toFixed(2)}` : 'Free'}`],
+          order.hasInsurance ? ['', '', 'Insurance:', `$${order.insuranceCost.toFixed(2)}`] : null,
           ['', '', 'Total:', `$${order.total.toFixed(2)}`]
-        ],
+        ].filter(Boolean),
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255] },
+        footStyles: { fillColor: [240, 240, 250], textColor: [0, 0, 0] }
       });
       
-      // Add payment status
+      // Add payment status with styling
       const finalY = doc.lastAutoTable.finalY || 150;
-      doc.text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, 20, finalY + 20);
-      doc.text(`Transaction ID: ${order.checkoutRequestId || 'N/A'}`, 20, finalY + 30);
+      doc.setFillColor(245, 245, 245);
+      doc.rect(20, finalY + 15, 170, 10, 'F');
+      doc.setFontSize(10);
+      doc.text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, 25, finalY + 22);
+      doc.text(`Transaction ID: ${order.checkoutRequestId || 'N/A'}`, 120, finalY + 22);
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Thank you for shopping with LuxeCarts!', 105, finalY + 40, { align: 'center' });
+      doc.text('For any questions, please contact support@luxecarts.com', 105, finalY + 47, { align: 'center' });
+      
+      // Add signature line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(130, finalY + 65, 180, finalY + 65);
+      doc.text('Authorized Signature', 155, finalY + 70, { align: 'center' });
       
       // Save the PDF
-      doc.save(`order-receipt-${order.id.slice(-6)}.pdf`);
-      toast.success('Receipt downloaded successfully');
+      doc.save(`luxecarts-invoice-${order.id.slice(-6)}.pdf`);
+      toast.success('Invoice downloaded successfully');
     } catch (error) {
-      console.error('Error generating receipt:', error);
-      toast.error('Failed to generate receipt');
+      console.error('Error generating invoice:', error);
+      toast.error('Failed to generate invoice');
     }
+  };
+
+  // Check if an order can be modified
+  const canModifyOrder = (order) => {
+    // Only processing orders can be modified
+    if (order.status !== 'processing') return false;
+    
+    // Check modification deadline if it exists
+    if (order.modificationDeadline) {
+      const deadline = order.modificationDeadline.toDate ? 
+        order.modificationDeadline.toDate() : new Date(order.modificationDeadline);
+      if (new Date() > deadline) return false;
+    }
+    
+    // Check modification count
+    const modCount = order.modificationCount || 0;
+    const maxMods = order.maxModificationsAllowed || 3; // Default to 3 if not specified
+    return modCount < maxMods;
   };
 
   if (loading) {
@@ -211,6 +265,11 @@ const Orders = () => {
                     <p className="text-sm text-gray-500">
                       Placed on {order.createdAt.toLocaleDateString()}
                     </p>
+                    {canModifyOrder(order) && (
+                      <div className="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <FiEdit className="mr-1" size={12} /> Modifiable
+                      </div>
+                    )}
                   </div>
                   <div className="flex space-x-4">
                     <button
@@ -220,16 +279,14 @@ const Orders = () => {
                       <FiRefreshCw className="mr-1" />
                       Reorder
                     </button>
-                    {order.paymentStatus === 'completed' && (
-                      <button
-                        onClick={() => generateReceipt(order)}
-                        className="flex items-center text-gray-600 hover:text-gray-900"
-                      >
-                        <FiDownload className="mr-1" />
-                        Receipt
-                      </button>
-                    )}
-                    {order.status !== 'canceled' && (
+                    <button
+                      onClick={() => generateInvoice(order)}
+                      className="flex items-center text-gray-600 hover:text-gray-900"
+                    >
+                      <FiDownload className="mr-1" />
+                      Invoice
+                    </button>
+                    {order.status === 'processing' && (
                       <button
                         onClick={() => handleCancelOrder(order.id)}
                         className="flex items-center text-red-600 hover:text-red-900"

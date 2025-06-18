@@ -45,6 +45,8 @@ import BlogPosts from './pages/admin/BlogPosts';
 import Promotions from './pages/admin/Promotions';
 import PickupLocations from './pages/admin/PickupLocations';
 import InsuranceManagement from './pages/admin/InsuranceManagement';
+import InvoiceCustomization from './pages/admin/InvoiceCustomization';
+import OrderModificationSettings from './pages/admin/OrderModificationSettings';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -217,6 +219,8 @@ function App() {
                     <Route path="promotions" element={<Promotions />} />
                     <Route path="pickup-locations" element={<PickupLocations />} />
                     <Route path="insurance" element={<InsuranceManagement />} />
+                    <Route path="invoice-customization" element={<InvoiceCustomization />} />
+                    <Route path="order-modification" element={<OrderModificationSettings />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>

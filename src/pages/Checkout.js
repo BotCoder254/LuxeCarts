@@ -863,69 +863,69 @@ const CheckoutForm = () => {
             {/* Shipping Address Fields */}
             {!isPickupInStore && (
               <div className="mt-4 space-y-4">
-                <div className="w-full">
-                  <label className={inputStyles.label}>Address</label>
-                  <textarea
-                    name="address"
+            <div className="w-full">
+              <label className={inputStyles.label}>Address</label>
+              <textarea
+                name="address"
                     required={!isPickupInStore}
-                    value={shippingDetails.address}
-                    onChange={handleShippingChange}
-                    className={`${inputStyles.textarea} w-full`}
-                    placeholder="Enter your street address"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="w-full">
-                    <label className={inputStyles.label}>City</label>
-                    <input
-                      type="text"
-                      name="city"
+                value={shippingDetails.address}
+                onChange={handleShippingChange}
+                className={`${inputStyles.textarea} w-full`}
+                placeholder="Enter your street address"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="w-full">
+                <label className={inputStyles.label}>City</label>
+                <input
+                  type="text"
+                  name="city"
                       required={!isPickupInStore}
-                      value={shippingDetails.city}
-                      onChange={handleShippingChange}
-                      className={`${inputStyles.base} w-full`}
-                      placeholder="Enter your city"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className={inputStyles.label}>State</label>
-                    <input
-                      type="text"
-                      name="state"
+                  value={shippingDetails.city}
+                  onChange={handleShippingChange}
+                  className={`${inputStyles.base} w-full`}
+                  placeholder="Enter your city"
+                />
+              </div>
+              <div className="w-full">
+                <label className={inputStyles.label}>State</label>
+                <input
+                  type="text"
+                  name="state"
                       required={!isPickupInStore}
-                      value={shippingDetails.state}
-                      onChange={handleShippingChange}
-                      className={`${inputStyles.base} w-full`}
-                      placeholder="Enter your state"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="w-full">
-                    <label className={inputStyles.label}>ZIP Code</label>
-                    <input
-                      type="text"
-                      name="zipCode"
+                  value={shippingDetails.state}
+                  onChange={handleShippingChange}
+                  className={`${inputStyles.base} w-full`}
+                  placeholder="Enter your state"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="w-full">
+                <label className={inputStyles.label}>ZIP Code</label>
+                <input
+                  type="text"
+                  name="zipCode"
                       required={!isPickupInStore}
-                      value={shippingDetails.zipCode}
-                      onChange={handleShippingChange}
-                      className={`${inputStyles.base} w-full`}
-                      placeholder="Enter your ZIP code"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label className={inputStyles.label}>Country</label>
-                    <input
-                      type="text"
-                      name="country"
+                  value={shippingDetails.zipCode}
+                  onChange={handleShippingChange}
+                  className={`${inputStyles.base} w-full`}
+                  placeholder="Enter your ZIP code"
+                />
+              </div>
+              <div className="w-full">
+                <label className={inputStyles.label}>Country</label>
+                <input
+                  type="text"
+                  name="country"
                       required={!isPickupInStore}
-                      value={shippingDetails.country}
-                      onChange={handleShippingChange}
-                      className={`${inputStyles.base} w-full`}
-                      placeholder="Enter your country"
-                    />
-                  </div>
-                </div>
+                  value={shippingDetails.country}
+                  onChange={handleShippingChange}
+                  className={`${inputStyles.base} w-full`}
+                  placeholder="Enter your country"
+                />
+              </div>
+            </div>
                 
                 {/* Shipment Insurance Option */}
                 <div className="mt-4 pt-4 border-t border-gray-200">

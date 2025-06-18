@@ -6,6 +6,13 @@ export const OrderStatus = {
   CANCELLED: 'cancelled',
 };
 
+export const ModificationStatus = {
+  ALLOWED: 'allowed',
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+};
+
 export const OrderType = {
   id: String,
   userId: String,
@@ -28,4 +35,14 @@ export const OrderType = {
   shippingCost: Number,
   createdAt: Date,
   updatedAt: Date,
+  canModify: Boolean,
+  modificationCount: Number,
+  maxModificationsAllowed: Number,
+  modifications: Array,
+  modificationDeadline: Date,
+  invoiceTemplate: String,
+  invoiceLogoUrl: String,
+  invoiceNotes: String,
+  invoiceCustomFields: Object,
+  invoiceColor: String,
 }; 

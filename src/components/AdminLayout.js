@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock, FiMapPin, FiTruck } from 'react-icons/fi';
+import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock, FiMapPin, FiTruck, FiGrid, FiZap, FiDollarSign, FiEdit } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -28,6 +28,8 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/security', icon: <FiShield className="w-6 h-6" />, label: 'Security' },
     { path: '/admin/pricing', icon: <FiTag className="w-6 h-6" />, label: 'Pricing Rules' },
     { path: '/admin/profile', icon: <FiUser className="w-6 h-6" />, label: 'Profile' },
+    { path: '/admin/invoice-customization', icon: <FiFileText className="w-6 h-6" />, label: 'Invoice Customization' },
+    { path: '/admin/order-modification', icon: <FiEdit className="w-6 h-6" />, label: 'Order Modification' },
   ];
 
   useEffect(() => {
@@ -87,11 +89,10 @@ const AdminLayout = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors ${
+                className={`flex items-center px-6 py-3 ${
                   location.pathname === item.path
-                    ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600'
-                    : ''
+                    ? 'bg-indigo-700 text-white'
+                    : ' hover:bg-indigo-700 hover:text-white'
                 }`}
               >
                 <span className="mr-3">{item.icon}</span>
