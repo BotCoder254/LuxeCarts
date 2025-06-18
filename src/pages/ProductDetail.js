@@ -20,6 +20,8 @@ import { motion } from 'framer-motion';
 
 import toast from 'react-hot-toast';
 
+import ProductExitIntent from '../components/ProductExitIntent';
+
 const ProductDetail = () => {
 
   const { id } = useParams();
@@ -957,6 +959,9 @@ const ProductDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Add the ProductExitIntent component */}
+        <ProductExitIntent product={product} />
 
       </div>
 
