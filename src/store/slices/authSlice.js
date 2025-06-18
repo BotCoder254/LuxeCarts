@@ -9,35 +9,30 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
 import { ROLES, DEFAULT_ROLE } from '../../config/roles';
+import { initializeUserDocument } from '../../utils/initializeCollections';
 
 // Helper function to create/update user document
 const createUserDocument = async (user, additionalData = {}) => {
   if (!user) return;
 
-  const userRef = doc(db, 'users', user.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (!userSnap.exists()) {
-    const { email, displayName, photoURL } = user;
-    try {
-      await setDoc(userRef, {
-        uid: user.uid,
-        email,
-        displayName: displayName || additionalData.displayName,
-        photoURL,
-        role: DEFAULT_ROLE,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        ...additionalData,
-      });
-    } catch (error) {
-      console.error('Error creating user document:', error);
-    }
-  }
+  const { uid, email, displayName, photoURL } = user;
+  
+  // Use the initializeUserDocument function to create or update the user document
+  const userData = {
+    uid,
+    email,
+    displayName: displayName || additionalData.displayName,
+    photoURL,
+    role: DEFAULT_ROLE,
+    updatedAt: serverTimestamp(),
+    ...additionalData,
+  };
+  
+  await initializeUserDocument(uid, userData);
 
   // Return the user document
-  const updatedUserSnap = await getDoc(userRef);
-  return { uid: user.uid, ...updatedUserSnap.data() };
+  const userSnap = await getDoc(doc(db, 'users', uid));
+  return { uid, ...userSnap.data() };
 };
 
 export const registerUser = createAsyncThunk(
@@ -54,6 +49,12 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+    
+    // If user document doesn't exist or is missing fields, initialize it
+    if (!userDoc.exists()) {
+      return createUserDocument(userCredential.user);
+    }
+    
     return { uid: userCredential.user.uid, ...userDoc.data() };
   }
 );
@@ -86,6 +87,9 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
+    },
+    logout: (state) => {
+      state.user = null;
     },
   },
   extraReducers: (builder) => {
@@ -129,7 +133,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser } = authSlice.actions;
+export const { setUser, logout } = authSlice.actions;
 
 // Selectors
 export const selectCurrentUser = (state) => state.auth.user;

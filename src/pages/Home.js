@@ -6,6 +6,9 @@ import FeaturedProducts from '../components/FeaturedProducts';
 import SlidingBanner from '../components/SlidingBanner';
 import FlashSalesBanner from '../components/FlashSalesBanner';
 import BlogPreview from '../components/BlogPreview';
+import VerifiedCommunities from '../components/VerifiedCommunities';
+import ProductCoCreation from '../components/ProductCoCreation';
+import ExitIntentPopup from '../components/ExitIntentPopup';
 import { toast } from 'react-hot-toast';
 
 const features = [
@@ -248,12 +251,15 @@ const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-900">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Shop by Category
             </h2>
+            <p className="text-xl text-gray-600">
+              Explore our wide range of categories
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {categories.map((category, index) => (
               <motion.div
                 key={category.name}
@@ -261,27 +267,30 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="relative group overflow-hidden rounded-lg shadow-lg"
+                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
               >
-                <Link to={category.link}>
-                  <div className="relative h-80">
+                <Link
+                  to={category.link}
+                  className="block"
+                  onClick={isPreview ? handlePreviewClick : undefined}
+                >
+                  <div className="aspect-w-16 aspect-h-9 sm:aspect-w-3 sm:aspect-h-2">
                     <img
                       src={category.image}
                       alt={category.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <h3 className="text-2xl font-bold text-white drop-shadow-lg">
-                        {category.name}
-                      </h3>
-                      <p className="text-white mt-2 drop-shadow-lg opacity-90">
-                        {category.description}
-                      </p>
-                      <p className="text-white mt-2 drop-shadow-lg">
-                        Explore Collection →
-                      </p>
-                    </div>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-gray-200 mb-4">
+                      {category.description}
+                    </p>
+                    <span className="inline-flex items-center text-white text-sm font-medium">
+                      Shop Now <FiArrowRight className="ml-2" />
+                    </span>
                   </div>
                 </Link>
               </motion.div>
@@ -290,11 +299,14 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Blog Section */}
-      <BlogPreview />
+      {/* Product Co-Creation Section */}
+      <ProductCoCreation />
+
+      {/* Verified Communities Section */}
+      <VerifiedCommunities />
 
       {/* Testimonials Section */}
-      <div className="bg-gradient-to-b from-gray-50 to-white py-24 w-full">
+      <div className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -303,16 +315,15 @@ const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="text-indigo-600 font-semibold text-sm uppercase tracking-wider">Testimonials</span>
-            <h2 className="mt-2 text-4xl font-bold text-gray-900">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
               What Our Customers Say
             </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Don't just take our word for it, hear from our satisfied customers
+            <p className="text-xl text-gray-600">
+              Don't just take our word for it
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.name}
@@ -320,29 +331,26 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300"
+                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
               >
-                <div className="flex items-center mb-6">
+                <div className="flex items-center mb-4">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="h-14 w-14 rounded-full border-4 border-indigo-50"
+                    className="h-12 w-12 rounded-full object-cover mr-4"
                   />
-                  <div className="ml-4">
-                    <h4 className="text-lg font-bold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-indigo-600 font-medium">{testimonial.role}</p>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {testimonial.name}
+                    </h4>
+                    <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </div>
-                <div className="mb-6">
-                  <div className="flex text-yellow-400 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <FiStar key={i} className="w-5 h-5 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 text-lg leading-relaxed">"{testimonial.content}"</p>
-                </div>
-                <div className="border-t border-gray-100 pt-4 mt-4">
-                  <p className="text-sm text-gray-500">Verified Purchase</p>
+                <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
+                <div className="flex">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <FiStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
                 </div>
               </motion.div>
             ))}
@@ -350,70 +358,13 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Newsletter Section */}
-      <div className="relative bg-indigo-700 overflow-hidden w-full">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-indigo-700 mix-blend-multiply" />
-        </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:py-32 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center"
-          >
-            <div>
-              <h2 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                Stay in the Loop
-              </h2>
-              <p className="mt-4 text-lg text-indigo-100">
-                Subscribe to our newsletter and be the first to know about:
-              </p>
-              <ul className="mt-8 space-y-3">
-                {['Exclusive Deals & Discounts', 'New Product Launches', 'Seasonal Collections', 'Special Events'].map((item) => (
-                  <li key={item} className="flex items-center text-indigo-100">
-                    <svg className="h-6 w-6 text-indigo-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-12 lg:mt-0">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 sm:p-10">
-                <form className="space-y-6">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-white">
-                      Email address
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        type="email"
-                        id="email"
-                        className="block w-full rounded-md border-0 bg-white/5 px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 placeholder:text-gray-300"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      type="submit"
-                      className="w-full rounded-md bg-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-indigo-700 transition-colors duration-200"
-                    >
-                      Subscribe Now
-                    </button>
-                  </div>
-                </form>
-                <p className="mt-4 text-sm text-indigo-100 text-center">
-                  We respect your privacy. Unsubscribe at any time.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+      {/* Blog Preview Section */}
+      <div className="py-16">
+        <BlogPreview />
       </div>
+
+       {/* Exit Intent Popup */}
+       <ExitIntentPopup />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white w-full">

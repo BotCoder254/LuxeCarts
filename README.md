@@ -73,8 +73,6 @@ Your premier destination for luxury shopping. Discover premium products with exc
 
 Environment variables can be configured in `.env` file:
 
-
-
 ## 📚 Documentation
 
 For detailed documentation, please visit [Project Documentation](link-to-docs).
@@ -109,3 +107,98 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
   Made with ❤️ by [Telvin Teum]
 </div>
+
+# LuxeCart
+
+LuxeCart is a premium e-commerce platform built with React, Firebase, and modern web technologies.
+
+## Features
+
+### User Features
+
+- **Product Browsing**: Browse products by category, search, and filter options
+- **Product Details**: View detailed product information, images, and reviews
+- **Shopping Cart**: Add products to cart, update quantities, and checkout
+- **User Authentication**: Register, login, and manage account details
+- **Order Management**: View order history and track current orders
+- **Wishlist/Favorites**: Save products for later purchase
+- **Blog**: Read articles and product guides
+- **Responsive Design**: Optimized for all device sizes
+
+### New User Features
+
+- **Verified Communities**: Join niche communities for product categories (e.g., gamers for gaming gear)
+- **Product Co-Creation**: Vote on or submit ideas for new product designs
+- **Exit-Intent Popups**: See special offers when about to leave the site or product pages
+
+### Admin Features
+
+- **Dashboard**: Overview of sales, orders, and inventory
+- **Product Management**: Add, edit, and delete products
+- **Order Processing**: View and update order statuses
+- **User Management**: View and manage user accounts
+- **Inventory Management**: Track stock levels and set alerts
+- **Banner Management**: Create and manage promotional banners
+- **Flash Sales**: Set up limited-time promotions
+- **Blog Management**: Create and publish blog posts
+- **Promotions**: Manage discount codes and special offers
+- **Pickup Locations**: Manage in-store pickup locations
+- **Insurance Plans**: Configure product insurance options
+- **Security Dashboard**: Monitor and respond to security alerts
+- **Pricing Rules**: Set up dynamic pricing rules
+- **Invoice Customization**: Create custom invoice templates
+- **Order Modification**: Configure order modification settings
+
+### New Admin Features
+
+- **Community Management**: Create and manage product communities
+- **Product Ideas Management**: Review and manage user-submitted product ideas
+
+## Tech Stack
+
+- **Frontend**: React, Redux, Tailwind CSS, Framer Motion
+- **Backend**: Firebase (Authentication, Firestore, Storage)
+- **Deployment**: Render
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+- Firebase account
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/luxecart.git
+cd luxecart
+```
+
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Set up Firebase configuration
+   - Create a Firebase project
+   - Enable Authentication, Firestore, and Storage
+   - Copy your Firebase config to `src/firebase/config.js`
+
+4. Start the development server
+```bash
+npm start
+# or
+yarn start
+```
+
+## Deployment
+
+The application is configured for deployment on Render using the included `render.yaml` file.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

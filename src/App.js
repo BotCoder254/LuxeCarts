@@ -8,6 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase/config';
 import { refreshProducts, updateProductStock } from './store/slices/productSlice';
 import { setupInteractionTracking } from './utils/trackInteraction';
+import { initializeCollections } from './utils/initializeCollections';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -47,6 +48,10 @@ import PickupLocations from './pages/admin/PickupLocations';
 import InsuranceManagement from './pages/admin/InsuranceManagement';
 import InvoiceCustomization from './pages/admin/InvoiceCustomization';
 import OrderModificationSettings from './pages/admin/OrderModificationSettings';
+import Communities from './pages/admin/Communities';
+import ProductIdeas from './pages/admin/ProductIdeas';
+import CommunitiesPage from './pages/CommunitiesPage';
+import ProductIdeasPage from './pages/ProductIdeasPage';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -71,6 +76,19 @@ function App() {
 
     return () => unsubscribeAuth(); // Cleanup subscription
   }, [dispatch]);
+
+  useEffect(() => {
+    // Initialize collections if they don't exist
+    const initCollections = async () => {
+      try {
+        await initializeCollections();
+      } catch (error) {
+        console.error('Error initializing collections:', error);
+      }
+    };
+    
+    initCollections();
+  }, []);
 
   useEffect(() => {
     // Redirect authenticated users from public routes
@@ -169,6 +187,8 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/communities" element={<CommunitiesPage />} />
+          <Route path="/product-ideas" element={<ProductIdeasPage />} />
           <Route
             path="/checkout"
             element={
@@ -221,6 +241,8 @@ function App() {
                     <Route path="insurance" element={<InsuranceManagement />} />
                     <Route path="invoice-customization" element={<InvoiceCustomization />} />
                     <Route path="order-modification" element={<OrderModificationSettings />} />
+                    <Route path="communities" element={<Communities />} />
+                    <Route path="product-ideas" element={<ProductIdeas />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
@@ -255,7 +277,7 @@ function App() {
             }
           />
 
-          {/* Catch-all route */}
+          {/* Fallback route for 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock, FiMapPin, FiTruck, FiGrid, FiZap, FiDollarSign, FiEdit } from 'react-icons/fi';
+import { FiHome, FiBox, FiShoppingBag, FiUsers, FiMenu, FiX, FiSettings, FiLogOut, FiUser, FiPackage, FiShield, FiTag, FiImage, FiFileText, FiPercent, FiClock, FiMapPin, FiTruck, FiGrid, FiZap, FiDollarSign, FiEdit, FiMessageCircle, FiThumbsUp, FiUserPlus } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -27,6 +27,8 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/insurance', icon: <FiShield className="w-6 h-6" />, label: 'Insurance Plans' },
     { path: '/admin/security', icon: <FiShield className="w-6 h-6" />, label: 'Security' },
     { path: '/admin/pricing', icon: <FiTag className="w-6 h-6" />, label: 'Pricing Rules' },
+    { path: '/admin/communities', icon: <FiUserPlus className="w-6 h-6" />, label: 'Communities' },
+    { path: '/admin/product-ideas', icon: <FiThumbsUp className="w-6 h-6" />, label: 'Product Ideas' },
     { path: '/admin/profile', icon: <FiUser className="w-6 h-6" />, label: 'Profile' },
     { path: '/admin/invoice-customization', icon: <FiFileText className="w-6 h-6" />, label: 'Invoice Customization' },
     { path: '/admin/order-modification', icon: <FiEdit className="w-6 h-6" />, label: 'Order Modification' },
