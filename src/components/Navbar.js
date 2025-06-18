@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logoutUser, selectIsAdmin } from '../store/slices/authSlice';
-import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid, FiPackage, FiImage, FiUsers } from 'react-icons/fi';
+import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid, FiPackage, FiImage, FiUsers, FiSettings, FiBriefcase, FiZap } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase/config';
+import { logout, selectIsAdmin } from '../store/slices/authSlice';
+import { clearCart, selectCartItemsCount } from '../store/slices/cartSlice';
+import { clearFavorites } from '../store/slices/favoriteSlice';
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -18,11 +22,17 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const cartItemsCount = useSelector(selectCartItemsCount);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -36,11 +46,14 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser()).unwrap();
+      await signOut(auth);
+      dispatch(logout());
+      dispatch(clearCart());
+      dispatch(clearFavorites());
       setIsProfileOpen(false);
       setIsMenuOpen(false);
       toast.success('Logged out successfully');
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       toast.error('Failed to logout');
     }
@@ -150,6 +163,18 @@ const Navbar = () => {
                   All Products
                 </Link>
                 <Link
+                  to="/communities"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Communities
+                </Link>
+                <Link
+                  to="/product-ideas"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Product Ideas
+                </Link>
+                <Link
                   to="/blog"
                   className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
@@ -227,7 +252,7 @@ const Navbar = () => {
               {user ? (
                 <div className="relative">
                   <button
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600"
                   >
                     {user.photoURL ? (
@@ -246,42 +271,69 @@ const Navbar = () => {
                     </span>
                   </button>
 
-                  <AnimatePresence>
-                    {isProfileOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
-                      >
+                  {isDropdownOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
+                    >
+                      <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                        <p className="font-medium">{user.displayName || 'User'}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      
+                      {isAdmin ? (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <FiSettings className="mr-2" /> Admin Dashboard
+                        </Link>
+                      ) : (
                         <Link
                           to="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          onClick={() => setIsDropdownOpen(false)}
                         >
-                          Profile
+                          <FiUser className="mr-2" /> Profile
                         </Link>
-                        <Link
-                          to="/orders"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                        >
-                          Orders
-                        </Link>
-                        <Link
-                          to="/analytics"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-                        >
-                          Analytics
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                        >
-                          <FiLogOut className="h-5 w-5 mr-2 text-red-600" />
-                          Logout
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      )}
+                      
+                      <Link
+                        to="/orders"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FiPackage className="mr-2" /> Orders
+                      </Link>
+                      
+                      <Link
+                        to="/communities"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FiUsers className="mr-2" /> My Communities
+                      </Link>
+                      
+                      <Link
+                        to="/product-ideas"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FiBriefcase className="mr-2" /> My Product Ideas
+                      </Link>
+                      
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                      >
+                        <FiLogOut className="h-5 w-5 mr-2 text-gray-700" />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="hidden md:flex items-center space-x-4">
@@ -361,6 +413,20 @@ const Navbar = () => {
                 </Link>
                 
                 <Link
+                  to="/communities"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                >
+                  Communities
+                </Link>
+
+                <Link
+                  to="/product-ideas"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                >
+                  Product Ideas
+                </Link>
+
+                <Link
                   to="/blog"
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                 >
@@ -425,6 +491,18 @@ const Navbar = () => {
                     >
                       Favorites
                     </Link>
+                    <Link
+                      to="/communities"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Communities
+                    </Link>
+                    <Link
+                      to="/product-ideas"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Product Ideas
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 flex items-center"
@@ -487,7 +565,7 @@ const Navbar = () => {
 
           {user ? (
             <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex flex-col items-center justify-center text-gray-600 hover:text-indigo-600"
             >
               <FiUser className="h-6 w-6" />

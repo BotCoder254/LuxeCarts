@@ -1,4 +1,4 @@
-import { collection, getDocs, addDoc, query, limit } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, limit, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 /**
@@ -25,6 +25,7 @@ export const initializeCollections = async () => {
           createdAt: new Date().toISOString().split('T')[0],
           topics: 42,
           posts: 356,
+          memberIds: [],
         },
         {
           name: 'Smart Home Innovators',
@@ -36,6 +37,7 @@ export const initializeCollections = async () => {
           createdAt: new Date().toISOString().split('T')[0],
           topics: 28,
           posts: 213,
+          memberIds: [],
         },
         {
           name: 'Fashion Forward',
@@ -47,6 +49,7 @@ export const initializeCollections = async () => {
           createdAt: new Date().toISOString().split('T')[0],
           topics: 67,
           posts: 589,
+          memberIds: [],
         },
         {
           name: 'Home Decor Dreams',
@@ -58,6 +61,7 @@ export const initializeCollections = async () => {
           createdAt: new Date().toISOString().split('T')[0],
           topics: 53,
           posts: 412,
+          memberIds: [],
         },
       ];
       
@@ -134,6 +138,60 @@ export const initializeCollections = async () => {
     return true;
   } catch (error) {
     console.error('Error initializing collections:', error);
+    return false;
+  }
+};
+
+/**
+ * Initialize user document when a new user signs up
+ * @param {string} userId - Firebase Auth user ID
+ * @param {object} userData - User data from Firebase Auth
+ */
+export const initializeUserDocument = async (userId, userData) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      // Create new user document with default fields
+      await setDoc(userRef, {
+        ...userData,
+        createdAt: serverTimestamp(),
+        joinedCommunities: [],
+        likedProductIdeas: [],
+        role: 'user',
+        settings: {
+          notifications: true,
+          newsletter: false,
+          darkMode: false
+        }
+      });
+      
+      console.log(`User document created for ${userId}`);
+    } else {
+      // Update existing user document with any missing fields
+      const existingData = userSnap.data();
+      const updates = {};
+      
+      if (!existingData.joinedCommunities) updates.joinedCommunities = [];
+      if (!existingData.likedProductIdeas) updates.likedProductIdeas = [];
+      if (!existingData.settings) {
+        updates.settings = {
+          notifications: true,
+          newsletter: false,
+          darkMode: false
+        };
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        await setDoc(userRef, updates, { merge: true });
+        console.log(`User document updated for ${userId}`);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error initializing user document:', error);
     return false;
   }
 }; 

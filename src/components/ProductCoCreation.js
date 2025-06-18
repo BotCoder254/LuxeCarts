@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { FiThumbsUp, FiMessageSquare, FiPlus, FiTrendingUp, FiAward } from 'react-icons/fi';
-import { motion } from 'framer-motion';
-import { collection, addDoc, updateDoc, doc, onSnapshot, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
+import { FiThumbsUp, FiMessageSquare, FiPlus, FiTrendingUp, FiAward, FiSend, FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { collection, addDoc, updateDoc, doc, onSnapshot, arrayUnion, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,9 @@ const ProductCoCreation = () => {
   const [newDescription, setNewDescription] = useState('');
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showComments, setShowComments] = useState(null);
+  const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState({});
 
   useEffect(() => {
     const fetchProductIdeas = async () => {
@@ -84,6 +87,37 @@ const ProductCoCreation = () => {
     fetchProductIdeas();
   }, []);
 
+  // Fetch comments when an idea is selected for viewing comments
+  useEffect(() => {
+    if (showComments) {
+      const fetchComments = async () => {
+        try {
+          const commentsRef = collection(db, 'productIdeas', showComments, 'comments');
+          
+          const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
+            const commentsData = snapshot.docs
+              .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              }))
+              .sort((a, b) => b.createdAt - a.createdAt);
+              
+            setComments(prevComments => ({
+              ...prevComments,
+              [showComments]: commentsData
+            }));
+          });
+          
+          return () => unsubscribe();
+        } catch (error) {
+          console.error('Error fetching comments:', error);
+        }
+      };
+      
+      fetchComments();
+    }
+  }, [showComments]);
+
   const handleVote = async (id) => {
     if (!user) {
       toast.error('Please log in to vote for product ideas');
@@ -91,10 +125,17 @@ const ProductCoCreation = () => {
     }
 
     try {
-      // Update vote count in Firestore
+      // Check if user has already voted
       const ideaRef = doc(db, 'productIdeas', id);
+      const ideaDoc = await getDoc(ideaRef);
+      const ideaData = ideaDoc.data();
       
-      // Update the votes count and add user to voters array to prevent duplicate votes
+      if (ideaData.voters?.includes(user.uid)) {
+        toast.error('You have already voted for this idea');
+        return;
+      }
+      
+      // Update vote count in Firestore
       await updateDoc(ideaRef, {
         votes: increment(1),
         voters: arrayUnion(user.uid)
@@ -144,6 +185,44 @@ const ProductCoCreation = () => {
     } catch (error) {
       console.error('Error submitting product idea:', error);
       toast.error('Failed to submit product idea');
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error('Please log in to add comments');
+      return;
+    }
+
+    if (!newComment.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+
+    try {
+      const commentData = {
+        text: newComment,
+        userId: user.uid,
+        userName: user.displayName || user.email,
+        userPhotoURL: user.photoURL || '',
+        createdAt: serverTimestamp()
+      };
+      
+      // Add comment to Firestore
+      await addDoc(collection(db, 'productIdeas', showComments, 'comments'), commentData);
+      
+      // Update comment count
+      await updateDoc(doc(db, 'productIdeas', showComments), {
+        comments: increment(1)
+      });
+      
+      setNewComment('');
+      toast.success('Comment added');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
     }
   };
 
@@ -288,14 +367,21 @@ const ProductCoCreation = () => {
                         {getStatusBadge(idea.status)}
                         <button
                           onClick={() => handleVote(idea.id)}
-                          className="flex items-center text-sm text-gray-700 hover:text-indigo-600"
+                          className={`flex items-center text-sm ${
+                            user && idea.voters?.includes(user.uid)
+                              ? 'text-indigo-600 font-medium'
+                              : 'text-gray-700 hover:text-indigo-600'
+                          }`}
                           disabled={user && idea.voters?.includes(user.uid)}
                         >
                           <FiThumbsUp className="mr-1" /> {idea.votes || 0}
                         </button>
-                        <span className="flex items-center text-sm text-gray-700">
+                        <button
+                          onClick={() => setShowComments(showComments === idea.id ? null : idea.id)}
+                          className="flex items-center text-sm text-gray-700 hover:text-indigo-600"
+                        >
                           <FiMessageSquare className="mr-1" /> {idea.comments || 0}
-                        </span>
+                        </button>
                       </div>
                     </div>
                     {idea.status === 'development' && (
@@ -309,6 +395,75 @@ const ProductCoCreation = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Comments Section */}
+                  <AnimatePresence>
+                    {showComments === idea.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-6 pt-4 border-t border-gray-200"
+                      >
+                        <h5 className="text-lg font-medium text-gray-900 mb-4">Comments</h5>
+                        
+                        {/* Comment Form */}
+                        {user ? (
+                          <form onSubmit={handleAddComment} className="mb-6">
+                            <div className="flex">
+                              <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Add a comment..."
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                              <button
+                                type="submit"
+                                className="px-4 py-2 border border-transparent rounded-r-md text-white bg-indigo-600 hover:bg-indigo-700"
+                              >
+                                <FiSend />
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <p className="text-sm text-gray-500 mb-4">
+                            Please <Link to="/login" className="text-indigo-600 hover:text-indigo-800">log in</Link> to add comments.
+                          </p>
+                        )}
+                        
+                        {/* Comments List */}
+                        <div className="space-y-4">
+                          {comments[idea.id]?.length > 0 ? (
+                            comments[idea.id].map((comment) => (
+                              <div key={comment.id} className="bg-gray-50 p-3 rounded-md">
+                                <div className="flex items-center mb-2">
+                                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 mr-2">
+                                    {comment.userPhotoURL ? (
+                                      <img src={comment.userPhotoURL} alt={comment.userName} className="w-8 h-8 rounded-full" />
+                                    ) : (
+                                      comment.userName?.charAt(0).toUpperCase() || 'U'
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">{comment.userName}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {comment.createdAt?.toDate ? 
+                                        comment.createdAt.toDate().toLocaleDateString() : 
+                                        'Just now'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-700">{comment.text}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500">No comments yet. Be the first to comment!</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ))}
             </div>

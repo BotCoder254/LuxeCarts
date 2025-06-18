@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiMessageCircle, FiEye, FiCheck, FiX } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiMessageCircle, FiEye, FiCheck, FiX, FiUserMinus } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc, onSnapshot, arrayRemove } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import toast from 'react-hot-toast';
 
@@ -17,6 +17,10 @@ const Communities = () => {
     image: '',
     featured: false,
   });
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [selectedCommunity, setSelectedCommunity] = useState(null);
+  const [communityMembers, setCommunityMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   useEffect(() => {
     fetchCommunities();
@@ -104,6 +108,51 @@ const Communities = () => {
     }
   };
 
+  const fetchCommunityMembers = async (communityId) => {
+    setLoadingMembers(true);
+    try {
+      // Get community data
+      const communityRef = doc(db, 'communities', communityId);
+      const communitySnap = await onSnapshot(communityRef, async (doc) => {
+        if (doc.exists()) {
+          const communityData = doc.data();
+          const memberIds = communityData.memberIds || [];
+          
+          // Get member details
+          const membersData = [];
+          
+          if (memberIds.length > 0) {
+            // Get user data for each member
+            const usersRef = collection(db, 'users');
+            const usersSnap = await getDocs(usersRef);
+            
+            usersSnap.forEach(userDoc => {
+              if (memberIds.includes(userDoc.id)) {
+                membersData.push({
+                  id: userDoc.id,
+                  ...userDoc.data()
+                });
+              }
+            });
+          }
+          
+          setCommunityMembers(membersData);
+          setLoadingMembers(false);
+        } else {
+          setCommunityMembers([]);
+          setLoadingMembers(false);
+        }
+      });
+      
+      return () => communitySnap();
+    } catch (error) {
+      console.error('Error fetching community members:', error);
+      toast.error('Failed to load community members');
+      setLoadingMembers(false);
+      setCommunityMembers([]);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -128,6 +177,7 @@ const Communities = () => {
         topics: 0,
         posts: 0,
         createdAt: new Date().toISOString().split('T')[0],
+        memberIds: []
       };
       
       // Add to Firestore
@@ -177,6 +227,41 @@ const Communities = () => {
         toast.error('Failed to delete community');
       }
     }
+  };
+
+  const handleRemoveMember = async (userId, userName) => {
+    if (!selectedCommunity) return;
+    
+    if (window.confirm(`Are you sure you want to remove ${userName || 'this user'} from the community?`)) {
+      try {
+        // Update community
+        const communityRef = doc(db, 'communities', selectedCommunity.id);
+        await updateDoc(communityRef, {
+          memberIds: arrayRemove(userId),
+          members: selectedCommunity.members > 0 ? selectedCommunity.members - 1 : 0
+        });
+        
+        // Update user
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+          joinedCommunities: arrayRemove(selectedCommunity.id)
+        });
+        
+        // Update local state
+        setCommunityMembers(communityMembers.filter(member => member.id !== userId));
+        
+        toast.success(`Removed ${userName || 'user'} from community`);
+      } catch (error) {
+        console.error('Error removing member:', error);
+        toast.error('Failed to remove member');
+      }
+    }
+  };
+
+  const handleViewMembers = (community) => {
+    setSelectedCommunity(community);
+    setShowMembersModal(true);
+    fetchCommunityMembers(community.id);
   };
 
   const handleEditClick = (community) => {
@@ -274,14 +359,23 @@ const Communities = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
+                      onClick={() => handleViewMembers(community)}
+                      className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                      title="View Members"
+                    >
+                      <FiUsers className="w-5 h-5" />
+                    </button>
+                    <button
                       onClick={() => handleEditClick(community)}
                       className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                      title="Edit Community"
                     >
                       <FiEdit2 className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleDeleteCommunity(community.id)}
                       className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete Community"
                     >
                       <FiTrash2 className="w-5 h-5" />
                     </button>
@@ -523,6 +617,86 @@ const Communities = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Members Modal */}
+      {showMembersModal && selectedCommunity && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Members of {selectedCommunity.name}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowMembersModal(false);
+                  setSelectedCommunity(null);
+                  setCommunityMembers([]);
+                }}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+            </div>
+
+            {loadingMembers ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto">
+                {communityMembers.length > 0 ? (
+                  <ul className="divide-y divide-gray-200">
+                    {communityMembers.map((member) => (
+                      <li key={member.id} className="py-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
+                            {member.photoURL ? (
+                              <img src={member.photoURL} alt={member.displayName} className="h-10 w-10 rounded-full" />
+                            ) : (
+                              member.displayName?.charAt(0).toUpperCase() || member.email?.charAt(0).toUpperCase() || 'U'
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-900">
+                              {member.displayName || member.email || 'Unknown User'}
+                            </p>
+                            {member.email && (
+                              <p className="text-sm text-gray-500">{member.email}</p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMember(member.id, member.displayName || member.email)}
+                          className="ml-2 px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                        >
+                          <FiUserMinus className="mr-1" /> Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No members found in this community.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowMembersModal(false);
+                  setSelectedCommunity(null);
+                  setCommunityMembers([]);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

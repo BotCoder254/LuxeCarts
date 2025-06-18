@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers, FiMessageCircle, FiSearch, FiFilter } from 'react-icons/fi';
+import { useSelector } from 'react-redux';
+import { FiUsers, FiMessageCircle, FiSearch, FiFilter, FiCheck } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import toast from 'react-hot-toast';
 
 const CommunitiesPage = () => {
+  const { user } = useSelector((state) => state.auth);
   const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState(['all']);
+  const [userCommunities, setUserCommunities] = useState([]);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -104,6 +108,75 @@ const CommunitiesPage = () => {
 
     fetchCommunities();
   }, []);
+
+  // Fetch user's joined communities
+  useEffect(() => {
+    if (user) {
+      const fetchUserCommunities = async () => {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          
+          const unsubscribe = onSnapshot(userRef, (doc) => {
+            if (doc.exists()) {
+              const userData = doc.data();
+              setUserCommunities(userData.joinedCommunities || []);
+            }
+          }, (error) => {
+            console.error("Error fetching user communities:", error);
+          });
+          
+          return () => unsubscribe();
+        } catch (error) {
+          console.error('Error setting up user communities listener:', error);
+        }
+      };
+      
+      fetchUserCommunities();
+    } else {
+      setUserCommunities([]);
+    }
+  }, [user]);
+
+  const handleJoinCommunity = async (communityId, communityName) => {
+    if (!user) {
+      toast.error('Please log in to join communities');
+      return;
+    }
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const communityRef = doc(db, 'communities', communityId);
+      
+      if (userCommunities.includes(communityId)) {
+        // Leave community
+        await updateDoc(userRef, {
+          joinedCommunities: arrayRemove(communityId)
+        });
+        
+        await updateDoc(communityRef, {
+          members: increment(-1),
+          memberIds: arrayRemove(user.uid)
+        });
+        
+        toast.success(`Left ${communityName}`);
+      } else {
+        // Join community
+        await updateDoc(userRef, {
+          joinedCommunities: arrayUnion(communityId)
+        });
+        
+        await updateDoc(communityRef, {
+          members: increment(1),
+          memberIds: arrayUnion(user.uid)
+        });
+        
+        toast.success(`Joined ${communityName}`);
+      }
+    } catch (error) {
+      console.error('Error updating community membership:', error);
+      toast.error('Failed to update community membership');
+    }
+  };
 
   // Filter communities based on search query and category
   const filteredCommunities = communities.filter(community => {
@@ -207,12 +280,32 @@ const CommunitiesPage = () => {
                       <FiMessageCircle className="inline mr-1" />
                       {community.topics || 0} topics
                     </div>
-                    <Link
-                      to={`/community/${community.id}`}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200"
-                    >
-                      Join Community
-                    </Link>
+                    <div className="flex items-center space-x-3">
+                      {userCommunities.includes(community.id) && (
+                        <Link
+                          to={`/community/${community.id}`}
+                          className="text-sm text-indigo-600 hover:text-indigo-800"
+                        >
+                          View
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => handleJoinCommunity(community.id, community.name)}
+                        className={`inline-flex items-center px-4 py-2 border ${
+                          userCommunities.includes(community.id)
+                            ? 'border-gray-300 text-gray-700 bg-gray-100'
+                            : 'border-transparent text-white bg-indigo-600 hover:bg-indigo-700'
+                        } text-sm font-medium rounded-md transition-all duration-200`}
+                      >
+                        {userCommunities.includes(community.id) ? (
+                          <>
+                            <FiCheck className="mr-2" /> Joined
+                          </>
+                        ) : (
+                          'Join Community'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
