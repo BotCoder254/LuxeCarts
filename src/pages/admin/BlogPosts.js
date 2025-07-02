@@ -187,117 +187,119 @@ const BlogPosts = () => {
 
   return (
     <AdminLayout>
-      <div className="p-4 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Blog Posts Manager</h1>
-          <button
-            onClick={() => {
-              setEditingPost(null);
-              setNewPost({
-                title: '',
-                summary: '',
-                content: '',
-                author: '',
-                category: 'news',
-                imageUrl: '',
-                published: true
-              });
-              setShowAddModal(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            <FiPlus />
-            Add New Post
-          </button>
-        </div>
+      <div className="py-6 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Blog Posts Manager</h1>
+            <button
+              onClick={() => {
+                setEditingPost(null);
+                setNewPost({
+                  title: '',
+                  summary: '',
+                  content: '',
+                  author: '',
+                  category: 'news',
+                  imageUrl: '',
+                  published: true
+                });
+                setShowAddModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              <FiPlus />
+              Add New Post
+            </button>
+          </div>
 
-        {/* Blog Posts List */}
-        <div className="space-y-6">
-          {posts.length === 0 ? (
-            <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <FiEdit className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">No Blog Posts Yet</h3>
-              <p className="text-gray-500 mt-2">Create your first blog post to engage with your customers!</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Create Blog Post
-              </button>
-            </div>
-          ) : (
-            posts.map((post) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="md:flex">
-                  <div className="md:w-1/3 h-48 md:h-auto relative">
-                    <img
-                      src={typeof post.imageUrl === 'string' ? post.imageUrl : ''}
-                      alt={typeof post.title === 'string' ? post.title : 'Blog post'}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-semibold ${post.published ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
-                      {post.published ? 'Published' : 'Draft'}
+          {/* Blog Posts List */}
+          <div className="space-y-6">
+            {posts.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <FiEdit className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700">No Blog Posts Yet</h3>
+                <p className="text-gray-500 mt-2">Create your first blog post to engage with your customers!</p>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                >
+                  Create Blog Post
+                </button>
+              </div>
+            ) : (
+              posts.map((post) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="md:flex">
+                    <div className="md:w-1/3 h-48 md:h-auto relative">
+                      <img
+                        src={typeof post.imageUrl === 'string' ? post.imageUrl : ''}
+                        alt={typeof post.title === 'string' ? post.title : 'Blog post'}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-semibold ${post.published ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
+                        {post.published ? 'Published' : 'Draft'}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                        <div className="text-white text-xs font-medium uppercase tracking-wide">
+                          {typeof post.category === 'string' 
+                            ? (categories.find(c => c.id === post.category)?.name || post.category)
+                            : 'Uncategorized'}
+                        </div>
+                      </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                      <div className="text-white text-xs font-medium uppercase tracking-wide">
-                        {typeof post.category === 'string' 
-                          ? (categories.find(c => c.id === post.category)?.name || post.category)
-                          : 'Uncategorized'}
+                    <div className="p-6 md:w-2/3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{typeof post.title === 'string' ? post.title : ''}</h3>
+                          <p className="text-gray-500 text-sm mt-1">
+                            By {typeof post.author === 'string' ? post.author : 'Unknown'} • {formatDate(post.createdAt)}
+                          </p>
+                          <p className="text-gray-600 mt-3 line-clamp-3">{typeof post.summary === 'string' ? post.summary : ''}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleTogglePublished(post)}
+                            className={`p-2 rounded-md ${post.published ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}
+                            title={post.published ? 'Unpublish' : 'Publish'}
+                          >
+                            {post.published ? <FiEyeOff /> : <FiEye />}
+                          </button>
+                          <button
+                            onClick={() => handleEdit(post)}
+                            className="p-2 bg-indigo-100 text-indigo-600 rounded-md"
+                            title="Edit"
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post)}
+                            className="p-2 bg-red-100 text-red-600 rounded-md"
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          {typeof post.content === 'string' 
+                            ? (post.content.length > 300 ? `${post.content.substring(0, 300)}...` : post.content)
+                            : ''}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="p-6 md:w-2/3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">{typeof post.title === 'string' ? post.title : ''}</h3>
-                        <p className="text-gray-500 text-sm mt-1">
-                          By {typeof post.author === 'string' ? post.author : 'Unknown'} • {formatDate(post.createdAt)}
-                        </p>
-                        <p className="text-gray-600 mt-3 line-clamp-3">{typeof post.summary === 'string' ? post.summary : ''}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleTogglePublished(post)}
-                          className={`p-2 rounded-md ${post.published ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}
-                          title={post.published ? 'Unpublish' : 'Publish'}
-                        >
-                          {post.published ? <FiEyeOff /> : <FiEye />}
-                        </button>
-                        <button
-                          onClick={() => handleEdit(post)}
-                          className="p-2 bg-indigo-100 text-indigo-600 rounded-md"
-                          title="Edit"
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(post)}
-                          className="p-2 bg-red-100 text-red-600 rounded-md"
-                          title="Delete"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        {typeof post.content === 'string' 
-                          ? (post.content.length > 300 ? `${post.content.substring(0, 300)}...` : post.content)
-                          : ''}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
+                </motion.div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

@@ -200,105 +200,107 @@ const FlashSales = () => {
 
   return (
     <AdminLayout>
-      <div className="p-4 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Flash Sales Manager</h1>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            <FiPlus />
-            Add Flash Sale
-          </button>
-        </div>
+      <div className="py-6 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Flash Sales Manager</h1>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              <FiPlus />
+              Add Flash Sale
+            </button>
+          </div>
 
-        {/* Flash Sales List */}
-        <div className="space-y-6">
-          {flashSales.length === 0 ? (
-            <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <FiClock className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">No Flash Sales Yet</h3>
-              <p className="text-gray-500 mt-2">Create your first flash sale to boost sales!</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Create Flash Sale
-              </button>
-            </div>
-          ) : (
-            flashSales.map((sale) => (
-              <motion.div
-                key={sale.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="md:flex">
-                  <div className="md:w-1/3 h-48 md:h-auto relative">
-                    <img
-                      src={sale.imageUrl}
-                      alt={sale.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-semibold ${sale.active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
-                      {sale.active ? 'Active' : 'Inactive'}
+          {/* Flash Sales List */}
+          <div className="space-y-6">
+            {flashSales.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <FiClock className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700">No Flash Sales Yet</h3>
+                <p className="text-gray-500 mt-2">Create your first flash sale to boost sales!</p>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                >
+                  Create Flash Sale
+                </button>
+              </div>
+            ) : (
+              flashSales.map((sale) => (
+                <motion.div
+                  key={sale.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="md:flex">
+                    <div className="md:w-1/3 h-48 md:h-auto relative">
+                      <img
+                        src={sale.imageUrl}
+                        alt={sale.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-semibold ${sale.active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
+                        {sale.active ? 'Active' : 'Inactive'}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                        <div className="text-white font-bold text-xl">{sale.discountPercentage}% OFF</div>
+                      </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                      <div className="text-white font-bold text-xl">{sale.discountPercentage}% OFF</div>
+                    <div className="p-6 md:w-2/3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{sale.title}</h3>
+                          <p className="text-gray-600 mt-2">{sale.description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleToggleActive(sale)}
+                            className={`p-2 rounded-md ${sale.active ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}
+                          >
+                            {sale.active ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(sale)}
+                            className="p-2 bg-red-100 text-red-600 rounded-md"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiCalendar className="mr-2" />
+                            <span>Start: {formatDate(sale.startDate)}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 mt-1">
+                            <FiCalendar className="mr-2" />
+                            <span>End: {formatDate(sale.endDate)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center text-sm font-semibold">
+                            <FiClock className="mr-2 text-indigo-600" />
+                            <span className="text-indigo-600">
+                              Time Remaining: {calculateTimeRemaining(sale.endDate)}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {sale.productIds?.length || 0} products on sale
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-6 md:w-2/3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">{sale.title}</h3>
-                        <p className="text-gray-600 mt-2">{sale.description}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleToggleActive(sale)}
-                          className={`p-2 rounded-md ${sale.active ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}
-                        >
-                          {sale.active ? 'Deactivate' : 'Activate'}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(sale)}
-                          className="p-2 bg-red-100 text-red-600 rounded-md"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FiCalendar className="mr-2" />
-                          <span>Start: {formatDate(sale.startDate)}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600 mt-1">
-                          <FiCalendar className="mr-2" />
-                          <span>End: {formatDate(sale.endDate)}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center text-sm font-semibold">
-                          <FiClock className="mr-2 text-indigo-600" />
-                          <span className="text-indigo-600">
-                            Time Remaining: {calculateTimeRemaining(sale.endDate)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {sale.productIds?.length || 0} products on sale
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
+                </motion.div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

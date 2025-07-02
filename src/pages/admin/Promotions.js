@@ -238,158 +238,162 @@ const Promotions = () => {
 
   return (
     <AdminLayout>
-      <div className="p-4 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Promotions Manager</h1>
-          <button
-            onClick={() => {
-              setEditingPromotion(null);
-              setNewPromotion({
-                name: '',
-                code: '',
-                description: '',
-                discountType: 'percentage',
-                discountValue: 10,
-                startDate: new Date().toISOString().split('T')[0],
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                minPurchase: 0,
-                maxUses: 100,
-                usedCount: 0,
-                active: true,
-                imageUrl: '',
-                applyToAll: true,
-                categoryIds: [],
-                productIds: []
-              });
-              setShowAddModal(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            <FiPlus />
-            Add Promotion
-          </button>
-        </div>
+      <div className="py-6 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Promotions Manager</h1>
+            <button
+              onClick={() => {
+                setEditingPromotion(null);
+                setNewPromotion({
+                  name: '',
+                  code: '',
+                  description: '',
+                  discountType: 'percentage',
+                  discountValue: 10,
+                  startDate: new Date().toISOString().split('T')[0],
+                  endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                  minPurchase: 0,
+                  maxUses: 100,
+                  usedCount: 0,
+                  active: true,
+                  imageUrl: '',
+                  applyToAll: true,
+                  categoryIds: [],
+                  productIds: []
+                });
+                setShowAddModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              <FiPlus />
+              Add Promotion
+            </button>
+          </div>
 
-        {/* Promotions List */}
-        <div className="space-y-6">
-          {promotions.length === 0 ? (
-            <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <FiPercent className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">No Promotions Yet</h3>
-              <p className="text-gray-500 mt-2">Create your first promotion to boost sales!</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Create Promotion
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Promotion
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Code
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Discount
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Validity
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {promotions.map((promotion) => (
-                    <tr key={promotion.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {promotion.imageUrl ? (
-                            <img 
-                              src={promotion.imageUrl} 
-                              alt={promotion.name} 
-                              className="h-10 w-10 rounded-md object-cover mr-3"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center mr-3">
-                              <FiTag className="text-indigo-600" />
+          {/* Promotions List */}
+          <div className="space-y-6">
+            {promotions.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <FiTag className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700">No Promotions Yet</h3>
+                <p className="text-gray-500 mt-2">Create your first promotion code to boost sales!</p>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                >
+                  Create Promotion
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Promotion
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Code
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Discount
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Validity
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[220px]">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {promotions.map((promotion) => (
+                        <tr key={promotion.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {promotion.imageUrl ? (
+                                <img 
+                                  src={promotion.imageUrl} 
+                                  alt={promotion.name} 
+                                  className="h-10 w-10 rounded-md object-cover mr-3"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center mr-3">
+                                  <FiTag className="text-indigo-600" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{promotion.name}</div>
+                                <div className="text-sm text-gray-500 line-clamp-1">{promotion.description}</div>
+                              </div>
                             </div>
-                          )}
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{promotion.name}</div>
-                            <div className="text-sm text-gray-500 line-clamp-1">{promotion.description}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-semibold bg-gray-100 rounded-md">
-                          {promotion.code}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {promotion.discountType === 'percentage' 
-                            ? `${promotion.discountValue !== undefined ? promotion.discountValue : 0}%` 
-                            : `$${(promotion.discountValue !== undefined ? promotion.discountValue : 0).toFixed(2)}`}
-                        </div>
-                        {(promotion.minPurchase || 0) > 0 && (
-                          <div className="text-xs text-gray-500">
-                            Min. purchase: ${(promotion.minPurchase || 0).toFixed(2)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(promotion.startDate)} - {formatDate(promotion.endDate)}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {promotion.usedCount} / {promotion.maxUses} uses
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(promotion)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleToggleActive(promotion)}
-                            className={`p-2 rounded-md ${promotion.active ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}
-                            title={promotion.active ? 'Deactivate' : 'Activate'}
-                          >
-                            {promotion.active ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleEdit(promotion)}
-                            className="p-2 bg-indigo-100 text-indigo-600 rounded-md"
-                            title="Edit"
-                          >
-                            <FiEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(promotion)}
-                            className="p-2 bg-red-100 text-red-600 rounded-md"
-                            title="Delete"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 py-1 text-xs font-semibold bg-gray-100 rounded-md">
+                              {promotion.code}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {promotion.discountType === 'percentage' 
+                                ? `${promotion.discountValue !== undefined ? promotion.discountValue : 0}%` 
+                                : `$${(promotion.discountValue !== undefined ? promotion.discountValue : 0).toFixed(2)}`}
+                            </div>
+                            {(promotion.minPurchase || 0) > 0 && (
+                              <div className="text-xs text-gray-500">
+                                Min. purchase: ${(promotion.minPurchase || 0).toFixed(2)}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {formatDate(promotion.startDate)} - {formatDate(promotion.endDate)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {promotion.usedCount} / {promotion.maxUses} uses
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getStatusBadge(promotion)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex space-x-2 items-center justify-start">
+                              <button
+                                onClick={() => handleToggleActive(promotion)}
+                                className={`px-2 py-1 text-xs rounded-md ${promotion.active ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'} whitespace-nowrap`}
+                                title={promotion.active ? 'Deactivate' : 'Activate'}
+                              >
+                                {promotion.active ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <button
+                                onClick={() => handleEdit(promotion)}
+                                className="p-2 bg-indigo-100 text-indigo-600 rounded-md"
+                                title="Edit"
+                              >
+                                <FiEdit />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(promotion)}
+                                className="p-2 bg-red-100 text-red-600 rounded-md"
+                                title="Delete"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
