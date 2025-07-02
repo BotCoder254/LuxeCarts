@@ -52,6 +52,10 @@ import Communities from './pages/admin/Communities';
 import ProductIdeas from './pages/admin/ProductIdeas';
 import CommunitiesPage from './pages/CommunitiesPage';
 import ProductIdeasPage from './pages/ProductIdeasPage';
+import MyCommunitiesPage from './pages/MyCommunitiesPage';
+import CommunityDetailPage from './pages/CommunityDetailPage';
+import MyProductIdeasPage from './pages/MyProductIdeasPage';
+import ProductIdeaDetailPage from './pages/ProductIdeaDetailPage';
 
 function App() {
   const { user } = useSelector((state) => state.auth);
@@ -189,6 +193,27 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/communities" element={<CommunitiesPage />} />
           <Route path="/product-ideas" element={<ProductIdeasPage />} />
+          <Route path="/community/:communityId" element={<CommunityDetailPage />} />
+          <Route path="/product-idea/:ideaId" element={<ProductIdeaDetailPage />} />
+          
+          <Route
+            path="/my-communities"
+            element={
+              <PrivateRoute>
+                <MyCommunitiesPage />
+              </PrivateRoute>
+            }
+          />
+          
+          <Route
+            path="/my-product-ideas"
+            element={
+              <PrivateRoute>
+                <MyProductIdeasPage />
+              </PrivateRoute>
+            }
+          />
+          
           <Route
             path="/checkout"
             element={

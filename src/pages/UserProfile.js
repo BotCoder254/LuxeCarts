@@ -4,23 +4,23 @@ import { doc, updateDoc, collection, query, where, onSnapshot, getDocs } from 'f
 import { updateProfile } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
 import { setUser } from '../store/slices/authSlice';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiEdit2, FiCamera, FiUsers, FiZap, FiThumbsUp } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiEdit2, FiCamera, FiUsers, FiZap, FiThumbsUp, FiMessageSquare, FiStar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { inputStyles } from '../styles/commonStyles';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Link } from 'react-router-dom';
 
-const UserProfile = () => {
+const UserProfile = ({ isAdmin }) => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [joinedCommunities, setJoinedCommunities] = useState([]);
-  const [userIdeas, setUserIdeas] = useState([]);
+  const [myProductIdeas, setMyProductIdeas] = useState([]);
   const [loadingCommunities, setLoadingCommunities] = useState(true);
-  const [loadingIdeas, setLoadingIdeas] = useState(true);
+  const [loadingProductIdeas, setLoadingProductIdeas] = useState(true);
   
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
@@ -88,7 +88,7 @@ const UserProfile = () => {
   useEffect(() => {
     if (user) {
       const fetchUserIdeas = async () => {
-        setLoadingIdeas(true);
+        setLoadingProductIdeas(true);
         try {
           const ideasRef = collection(db, 'productIdeas');
           const q = query(ideasRef, where('submittedById', '==', user.uid));
@@ -99,19 +99,19 @@ const UserProfile = () => {
               ...doc.data()
             }));
             
-            setUserIdeas(ideasData);
-            setLoadingIdeas(false);
+            setMyProductIdeas(ideasData);
+            setLoadingProductIdeas(false);
           }, (error) => {
             console.error('Error fetching user ideas:', error);
-            setUserIdeas([]);
-            setLoadingIdeas(false);
+            setMyProductIdeas([]);
+            setLoadingProductIdeas(false);
           });
           
           return () => unsubscribe();
         } catch (error) {
           console.error('Error setting up ideas listener:', error);
-          setUserIdeas([]);
-          setLoadingIdeas(false);
+          setMyProductIdeas([]);
+          setLoadingProductIdeas(false);
         }
       };
       
@@ -361,12 +361,20 @@ const UserProfile = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">My Communities</h2>
-        <Link
-          to="/communities"
-          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-        >
-          Browse All Communities
-        </Link>
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/my-communities"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            View All My Communities
+          </Link>
+          <Link
+            to="/communities"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            Browse All Communities
+          </Link>
+        </div>
       </div>
       
       {loadingCommunities ? (
@@ -375,7 +383,7 @@ const UserProfile = () => {
         </div>
       ) : joinedCommunities.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {joinedCommunities.map(community => (
+          {joinedCommunities.slice(0, 4).map(community => (
             <div key={community.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
               <div className="h-32 bg-gray-200 relative">
                 <img
@@ -429,61 +437,87 @@ const UserProfile = () => {
     </div>
   );
 
-  const renderIdeasContent = () => (
+  const renderProductIdeasContent = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">My Product Ideas</h2>
-        <Link
-          to="/product-ideas"
-          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-        >
-          Browse All Ideas
-        </Link>
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/my-product-ideas"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            View All My Ideas
+          </Link>
+          <Link
+            to="/product-ideas"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            Browse All Ideas
+          </Link>
+        </div>
       </div>
       
-      {loadingIdeas ? (
+      {loadingProductIdeas ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
-      ) : userIdeas.length > 0 ? (
+      ) : myProductIdeas.length > 0 ? (
         <div className="space-y-4">
-          {userIdeas.map(idea => (
+          {myProductIdeas.slice(0, 3).map(idea => (
             <div key={idea.id} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{idea.title}</h3>
-                <span className={`text-xs font-medium px-2 py-1 rounded ${
-                  idea.status === 'voting' ? 'bg-blue-100 text-blue-800' :
-                  idea.status === 'development' ? 'bg-green-100 text-green-800' :
-                  'bg-purple-100 text-purple-800'
-                }`}>
-                  {idea.status.charAt(0).toUpperCase() + idea.status.slice(1)}
-                </span>
-              </div>
-              <p className="mt-2 text-gray-600">{idea.description}</p>
-              <div className="mt-4 flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center text-sm text-gray-500">
-                    <FiThumbsUp className="mr-1" /> {idea.votes || 0} votes
+                <div>
+                  <div className="flex items-center">
+                    <h3 className="text-lg font-semibold text-gray-900 mr-2">{idea.title}</h3>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                      idea.status === 'voting' ? 'bg-blue-100 text-blue-800' :
+                      idea.status === 'development' ? 'bg-green-100 text-green-800' :
+                      idea.status === 'completed' ? 'bg-purple-100 text-purple-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {idea.status === 'voting' ? 'Voting' :
+                      idea.status === 'development' ? 'In Development' :
+                      idea.status === 'completed' ? 'Completed' : 'Rejected'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{idea.description}</p>
+                </div>
+                <div className="flex items-start space-x-4 text-sm text-gray-500">
+                  <span className="flex items-center">
+                    <FiThumbsUp className="mr-1" /> {idea.votes || 0}
                   </span>
-                  <span className="flex items-center text-sm text-gray-500">
-                    <FiZap className="mr-1" /> {idea.comments || 0} comments
+                  <span className="flex items-center">
+                    <FiMessageSquare className="mr-1" /> {idea.comments || 0}
                   </span>
                 </div>
+              </div>
+              <div className="flex justify-end mt-2">
                 <Link
-                  to={`/product-ideas#${idea.id}`}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                  to={`/product-idea/${idea.id}`}
+                  className="text-sm text-indigo-600 hover:text-indigo-800"
                 >
                   View Details
                 </Link>
               </div>
             </div>
           ))}
+          
+          {myProductIdeas.length > 3 && (
+            <div className="text-center mt-4">
+              <Link
+                to="/my-product-ideas"
+                className="text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                View all {myProductIdeas.length} ideas
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <FiZap className="mx-auto h-12 w-12 text-gray-400" />
+          <FiStar className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-lg font-medium text-gray-900">No product ideas submitted yet</h3>
-          <p className="mt-1 text-sm text-gray-500">Submit your ideas to help shape our future products</p>
+          <p className="mt-1 text-sm text-gray-500">Submit your ideas for new products or improvements</p>
           <div className="mt-6">
             <Link
               to="/product-ideas"
@@ -498,7 +532,7 @@ const UserProfile = () => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 pt-24">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -588,7 +622,7 @@ const UserProfile = () => {
             {/* Tab Content */}
             {activeTab === 'profile' && renderProfileContent()}
             {activeTab === 'communities' && renderCommunitiesContent()}
-            {activeTab === 'ideas' && renderIdeasContent()}
+            {activeTab === 'ideas' && renderProductIdeasContent()}
           </div>
         </div>
       </motion.div>

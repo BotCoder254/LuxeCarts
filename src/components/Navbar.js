@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid, FiPackage, FiImage, FiUsers, FiSettings, FiBriefcase, FiZap } from 'react-icons/fi';
+import { FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX, FiShoppingCart, FiHeart, FiSearch, FiGrid, FiPackage, FiImage, FiUsers, FiSettings, FiBriefcase, FiZap, FiMessageSquare, FiStar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { signOut } from 'firebase/auth';
@@ -162,18 +162,52 @@ const Navbar = () => {
                 >
                   All Products
                 </Link>
-                <Link
-                  to="/communities"
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Communities
-                </Link>
-                <Link
-                  to="/product-ideas"
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Product Ideas
-                </Link>
+                <div className="relative group">
+                  <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                    Communities
+                  </button>
+                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="py-1">
+                      <Link
+                        to="/communities"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        Browse Communities
+                      </Link>
+                      {user && (
+                        <Link
+                          to="/my-communities"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                        >
+                          My Communities
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="relative group">
+                  <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                    Product Ideas
+                  </button>
+                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="py-1">
+                      <Link
+                        to="/product-ideas"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        Browse Ideas
+                      </Link>
+                      {user && (
+                        <Link
+                          to="/my-product-ideas"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                        >
+                          My Product Ideas
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <Link
                   to="/blog"
                   className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -307,7 +341,7 @@ const Navbar = () => {
                       </Link>
                       
                       <Link
-                        to="/communities"
+                        to="/my-communities"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -315,11 +349,11 @@ const Navbar = () => {
                       </Link>
                       
                       <Link
-                        to="/product-ideas"
+                        to="/my-product-ideas"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        <FiBriefcase className="mr-2" /> My Product Ideas
+                        <FiStar className="mr-2" /> My Product Ideas
                       </Link>
                       
                       <button
@@ -419,12 +453,30 @@ const Navbar = () => {
                   Communities
                 </Link>
 
+                {user && (
+                  <Link
+                    to="/my-communities"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 pl-6"
+                  >
+                    My Communities
+                  </Link>
+                )}
+
                 <Link
                   to="/product-ideas"
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                 >
                   Product Ideas
                 </Link>
+
+                {user && (
+                  <Link
+                    to="/my-product-ideas"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 pl-6"
+                  >
+                    My Product Ideas
+                  </Link>
+                )}
 
                 <Link
                   to="/blog"
@@ -490,18 +542,6 @@ const Navbar = () => {
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                     >
                       Favorites
-                    </Link>
-                    <Link
-                      to="/communities"
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    >
-                      Communities
-                    </Link>
-                    <Link
-                      to="/product-ideas"
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    >
-                      Product Ideas
                     </Link>
                     <button
                       onClick={handleLogout}
