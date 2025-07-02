@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { FiShoppingBag, FiEye, FiDownload } from 'react-icons/fi';
+import { FiShoppingBag, FiEye, FiDownload, FiPrinter, FiFileText } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -205,6 +206,137 @@ const AdminOrders = () => {
     navigate(`/admin/orders/${orderId}`);
   };
 
+  // Add function to print order details
+  const printOrder = (order) => {
+    try {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank');
+      
+      // Generate HTML content for the print window
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Order #${order.id.slice(-6)}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .order-info { margin-bottom: 20px; }
+              .order-details { margin-bottom: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .total-row { font-weight: bold; }
+              .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+              @media print {
+                button { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>LuxeCarts - Order Details</h1>
+              <button onclick="window.print()">Print Order</button>
+            </div>
+
+            <div class="order-info">
+              <h2>Order #${order.id.slice(-6)}</h2>
+              <p><strong>Date:</strong> ${formatDate(order.createdAt)}</p>
+              <p><strong>Status:</strong> ${order.status.toUpperCase()}</p>
+              <p><strong>Payment Status:</strong> ${order.paymentStatus.toUpperCase()}</p>
+            </div>
+
+            <div class="order-details">
+              <h3>Customer Information</h3>
+              <p><strong>Name:</strong> ${order.shippingDetails.name}</p>
+              <p><strong>Email:</strong> ${order.shippingDetails.email}</p>
+              <p><strong>Phone:</strong> ${order.shippingDetails.phone}</p>
+              
+              <h3>Shipping Address</h3>
+              <p>${order.shippingDetails.address}</p>
+              <p>${order.shippingDetails.city}, ${order.shippingDetails.state} ${order.shippingDetails.zipCode}</p>
+              <p>${order.shippingDetails.country}</p>
+            </div>
+
+            <h3>Order Items</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order.items.map(item => `
+                  <tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+                <tr class="total-row">
+                  <td colspan="3" style="text-align: right;">Total:</td>
+                  <td>$${order.total.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="footer">
+              <p>Thank you for shopping with LuxeCarts!</p>
+              <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            </div>
+          </body>
+        </html>
+      `);
+      
+      // Focus on the new window
+      printWindow.document.close();
+      printWindow.focus();
+      
+      toast.success('Order ready for printing');
+    } catch (error) {
+      console.error('Error printing order:', error);
+      toast.error('Failed to print order');
+    }
+  };
+
+  // Add function to export all orders to Excel
+  const exportOrdersToExcel = () => {
+    try {
+      // Convert orders to exportable format
+      const exportData = orders.map(order => ({
+        'Order ID': `#${order.id.slice(-6)}`,
+        'Customer': order.shippingDetails.name,
+        'Email': order.shippingDetails.email,
+        'Phone': order.shippingDetails.phone,
+        'Date': formatDate(order.createdAt),
+        'Status': order.status,
+        'Payment Status': order.paymentStatus,
+        'Total': `$${order.total.toFixed(2)}`,
+        'Items Count': order.items.length,
+        'Address': `${order.shippingDetails.address}, ${order.shippingDetails.city}, ${order.shippingDetails.state}, ${order.shippingDetails.zipCode}, ${order.shippingDetails.country}`
+      }));
+
+      // Create a worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Create a workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+      
+      // Generate Excel file
+      const currentDate = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `LuxeCarts_Orders_${currentDate}.xlsx`);
+      
+      toast.success('Orders exported successfully');
+    } catch (error) {
+      console.error('Error exporting orders:', error);
+      toast.error('Failed to export orders');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -234,6 +366,15 @@ const AdminOrders = () => {
             <div className="text-sm text-gray-600">
               Showing {orders.length} completed order{orders.length !== 1 ? 's' : ''}
             </div>
+            
+            <button
+              onClick={exportOrdersToExcel}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <FiFileText className="mr-2 -ml-1 h-5 w-5" />
+              Export Orders
+            </button>
+            
             <Link
               to="/?preview=true"
               target="_blank"
@@ -329,6 +470,13 @@ const AdminOrders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => printOrder(order)}
+                          className="text-gray-600 hover:text-gray-900"
+                          title="Print Order"
+                        >
+                          <FiPrinter className="w-5 h-5" />
+                        </button>
                         <button
                           onClick={() => generateDetailedReceipt(order)}
                           className="text-gray-600 hover:text-gray-900"

@@ -12,12 +12,16 @@ import { inputStyles } from '../styles/commonStyles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 // Define a Paystack public key
 const PAYSTACK_PUBLIC_KEY = 'pk_live_f75e7fc5c652583410d16789fc9955853373fc8c';
+
+// PayPal client ID
+const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID || 'AW6MOo3Tp54j86UI4EhDQLdeg6CflDSlz76o8IDLNE0TExi9PliIFg1lU1iAK_HxuvYS44QdSliyCXyu';
 
 const SHIPPING_COST = 0;
 const FREE_SHIPPING_THRESHOLD = 100;
@@ -45,7 +49,7 @@ const CheckoutForm = () => {
   const { items, total } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa', 'stripe', or 'paystack'
+  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa', 'stripe', 'paystack', or 'paypal'
   const stripe = useStripe();
   const elements = useElements();
   const [shippingDetails, setShippingDetails] = useState({
@@ -72,6 +76,17 @@ const CheckoutForm = () => {
   const [insurancePlans, setInsurancePlans] = useState([]);
   const [selectedInsurancePlan, setSelectedInsurancePlan] = useState('');
   const [insuranceRate, setInsuranceRate] = useState(0.05); // Default 5%
+  const [paypalButtonsReady, setPaypalButtonsReady] = useState(false);
+
+  // Add a ref to track if component is mounted
+  const isMounted = React.useRef(true);
+
+  // Add cleanup to prevent state updates after unmounting
+  React.useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Fetch pickup locations and insurance plans from Firestore
   useEffect(() => {
@@ -436,6 +451,52 @@ const CheckoutForm = () => {
     }
   };
 
+  // Add PayPal payment handler
+  const handlePayPalPayment = async (pickupLocation, insurancePlan) => {
+    // We don't need to set loading state here as PayPal manages its own UI state
+    
+    try {
+      // Create order first with pending status
+      const orderDocRef = await addDoc(collection(db, 'orders'), {
+        userId: user.uid,
+        items,
+        total: finalTotal,
+        shippingDetails,
+        paymentStatus: 'pending',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        isVisible: false, // Hide from admin until payment is successful
+        paymentMethod: 'paypal',
+        isPickupInStore,
+        pickupLocation: isPickupInStore ? {
+          id: pickupLocation.id,
+          name: pickupLocation.name,
+          address: pickupLocation.address,
+          city: pickupLocation.city,
+          state: pickupLocation.state
+        } : null,
+        hasInsurance: addShipmentInsurance,
+        insurancePlan: addShipmentInsurance ? {
+          id: insurancePlan.id,
+          name: insurancePlan.name,
+          rate: insurancePlan.rate,
+          isPercentage: insurancePlan.isPercentage
+        } : null,
+        insuranceCost: addShipmentInsurance ? insuranceCost : 0,
+        shippingCost
+      });
+      
+      setOrderRef(orderDocRef);
+      
+      // PayPal payment will be completed via the PayPalButtons component
+      return orderDocRef;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to initialize payment. Please try again.');
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -508,6 +569,10 @@ const CheckoutForm = () => {
         toast.error(error.message || 'An error occurred during checkout. Please try again.');
         setLoading(false);
       }
+    } else if (paymentMethod === 'paypal') {
+      // For PayPal, we show a message to use the PayPal button directly
+      toast.info('Please use the PayPal button to complete your payment.');
+      return;
     } else {
       setLoading(true);
       setError('');
@@ -733,6 +798,29 @@ const CheckoutForm = () => {
     }, 5000); // Poll every 5 seconds
 
     setPollingInterval(interval);
+  };
+
+  // Button display logic based on payment method
+  const renderPayButton = () => {
+    if (loading) {
+      return "Processing...";
+    }
+    
+    if (paymentMethod === 'paypal') {
+      return "Use PayPal Button Above";
+    }
+    
+    return `Pay $${finalTotal.toFixed(2)}`;
+  };
+
+  // Button disabled logic
+  const isPayButtonDisabled = () => {
+    if (loading) return true;
+    if (paymentMethod === 'stripe' && !stripe) return true;
+    if (paymentMethod === 'paystack' && isLoading) return true;
+    if (paymentMethod === 'paypal') return true; // Always disable the standard button for PayPal
+    
+    return false;
   };
 
   return (
@@ -995,7 +1083,7 @@ const CheckoutForm = () => {
             <FiLock className="mr-2" /> Payment Information
           </h3>
           <div className="space-y-4">
-            <div className="flex space-x-4 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('mpesa')}
@@ -1029,6 +1117,17 @@ const CheckoutForm = () => {
               >
                 Paystack
               </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('paypal')}
+                className={`flex-1 py-2 px-4 rounded-md ${
+                  paymentMethod === 'paypal'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                PayPal
+              </button>
             </div>
 
             {paymentMethod === 'mpesa' ? (
@@ -1050,6 +1149,151 @@ const CheckoutForm = () => {
                 <p className="text-sm text-gray-600">
                   Your card will be charged securely through Stripe.
                 </p>
+              </div>
+            ) : paymentMethod === 'paypal' ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Proceed to checkout to pay securely with PayPal. You will be redirected to PayPal to complete your payment.
+                </p>
+                <div className="mt-4" style={{ display: paymentMethod === 'paypal' ? 'block' : 'none' }}>
+                  <PayPalButtons
+                    style={{ 
+                      color: "gold",
+                      layout: "horizontal",
+                      height: 40,
+                      tagline: false,
+                      shape: "rect"
+                    }}
+                    fundingSource={undefined}
+                    key={`paypal-${finalTotal}-${Date.now()}`}
+                    createOrder={(data, actions) => {
+                      // Check if the required fields are filled
+                      if (!shippingDetails.name || !shippingDetails.email || !shippingDetails.phone) {
+                        toast.error('Please fill in all required contact details.');
+                        return Promise.reject(new Error('Missing required fields'));
+                      }
+                      
+                      // Validate shipping address fields if not pickup in store
+                      if (!isPickupInStore && (!shippingDetails.address || !shippingDetails.city || 
+                          !shippingDetails.state || !shippingDetails.zipCode || !shippingDetails.country)) {
+                        toast.error('Please fill in all shipping details.');
+                        return Promise.reject(new Error('Missing shipping details'));
+                      }
+                      
+                      // Validate store selection if pickup in store
+                      if (isPickupInStore && !selectedStore) {
+                        toast.error('Please select a store for pickup.');
+                        return Promise.reject(new Error('Store selection required'));
+                      }
+
+                      return actions.order.create({
+                        purchase_units: [
+                          {
+                            description: `LuxeCarts Order`,
+                            amount: {
+                              currency_code: "USD",
+                              value: finalTotal.toFixed(2)
+                            }
+                          }
+                        ]
+                      });
+                    }}
+                    onApprove={async (data, actions) => {
+                      if (!isMounted.current) return;
+
+                      try {
+                        // Show loading toast
+                        const loadingToast = toast.loading('Processing your PayPal payment...');
+                        
+                        // Get selected pickup location and insurance plan details
+                        const pickupLocation = isPickupInStore ? pickupLocations.find(loc => loc.id === selectedStore) : null;
+                        const insurancePlan = addShipmentInsurance ? insurancePlans.find(plan => plan.id === selectedInsurancePlan) : null;
+                        
+                        // Create order in database
+                        const orderDocRef = await addDoc(collection(db, 'orders'), {
+                          userId: user.uid,
+                          items,
+                          total: finalTotal,
+                          shippingDetails,
+                          paymentStatus: 'pending',
+                          status: 'pending',
+                          createdAt: serverTimestamp(),
+                          isVisible: false, // Hide from admin until payment is successful
+                          paymentMethod: 'paypal',
+                          isPickupInStore,
+                          pickupLocation: isPickupInStore ? {
+                            id: pickupLocation.id,
+                            name: pickupLocation.name,
+                            address: pickupLocation.address,
+                            city: pickupLocation.city,
+                            state: pickupLocation.state
+                          } : null,
+                          hasInsurance: addShipmentInsurance,
+                          insurancePlan: addShipmentInsurance ? {
+                            id: insurancePlan.id,
+                            name: insurancePlan.name,
+                            rate: insurancePlan.rate,
+                            isPercentage: insurancePlan.isPercentage
+                          } : null,
+                          insuranceCost: addShipmentInsurance ? insuranceCost : 0,
+                          shippingCost
+                        });
+
+                        // Capture the funds
+                        const orderData = await actions.order.capture();
+                        console.log("PayPal order completed:", orderData);
+                        
+                        if (!isMounted.current) return;
+
+                        // Update order status in Firestore
+                        await updateDoc(orderDocRef, {
+                          status: 'processing',
+                          paymentStatus: 'completed',
+                          updatedAt: serverTimestamp(),
+                          isVisible: true,
+                          paypalOrderId: orderData.id,
+                          paymentDetails: {
+                            transactionId: orderData.purchase_units[0].payments.captures[0].id,
+                            payerId: orderData.payer.payer_id,
+                            payerEmail: orderData.payer.email_address,
+                            status: orderData.status,
+                            updateTime: orderData.update_time
+                          }
+                        });
+                        
+                        toast.dismiss(loadingToast);
+                        
+                        if (!isMounted.current) return;
+                        
+                        // Clear cart and navigate to success page
+                        dispatch(clearCart());
+                        navigate('/order-success', { 
+                          state: {
+                            orderId: orderDocRef.id,
+                            total: finalTotal
+                          }
+                        });
+                        toast.success('Payment successful! Order placed.');
+                      } catch (error) {
+                        console.error("Error completing PayPal payment:", error);
+                        if (isMounted.current) {
+                          toast.error('Failed to complete payment. Please try again.');
+                        }
+                      }
+                    }}
+                    onCancel={() => {
+                      if (isMounted.current) {
+                        toast.error('PayPal payment cancelled');
+                      }
+                    }}
+                    onError={(err) => {
+                      console.error('PayPal error:', err);
+                      if (isMounted.current) {
+                        toast.error('PayPal payment failed. Please try again.');
+                      }
+                    }}
+                  />
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -1143,16 +1387,10 @@ const CheckoutForm = () => {
 
         <button
           type="submit"
-          disabled={loading || (paymentMethod === 'stripe' && !stripe) || (paymentMethod === 'paystack' && isLoading)}
+          disabled={isPayButtonDisabled()}
           className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading
-            ? 'Processing...'
-            : paymentMethod === 'mpesa'
-            ? `Pay KES ${finalTotal.toFixed(2)} with M-Pesa`
-            : paymentMethod === 'stripe'
-            ? `Pay $${finalTotal.toFixed(2)} with Card`
-            : 'Pay with Paystack'}
+          {renderPayButton()}
         </button>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -1170,18 +1408,25 @@ const CheckoutForm = () => {
 
 const Checkout = () => {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="container mx-auto px-4 py-8"
+    >
+      <h1 className="text-3xl font-bold text-center mb-8">Checkout</h1>
+
+      <PayPalScriptProvider 
+        options={{ 
+          "client-id": PAYPAL_CLIENT_ID,
+          currency: "USD",
+          intent: "capture"
+        }}
       >
-        <h1 className="text-2xl font-bold mb-8">Checkout</h1>
         <Elements stripe={stripePromise}>
           <CheckoutForm />
         </Elements>
-      </motion.div>
-    </div>
+      </PayPalScriptProvider>
+    </motion.div>
   );
 };
 

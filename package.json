@@ -5,6 +5,7 @@
   "dependencies": {
     "@nivo/core": "^0.88.0",
     "@nivo/heatmap": "^0.88.0",
+    "@paypal/react-paypal-js": "^8.8.3",
     "@reduxjs/toolkit": "^1.9.7",
     "@stripe/react-stripe-js": "^3.5.1",
     "@stripe/stripe-js": "^6.1.0",
@@ -28,7 +29,8 @@
     "recharts": "^2.15.1",
     "stripe": "^17.7.0",
     "sweetalert": "^2.1.2",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
