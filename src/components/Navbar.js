@@ -162,6 +162,13 @@ const Navbar = () => {
                 >
                   All Products
                 </Link>
+                <Link
+                  to="/top-rated"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                >
+                  <FiStar className="w-4 h-4 mr-1" />
+                  Top Rated
+                </Link>
                 <div className="relative group">
                   <button className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
                     Communities
@@ -444,6 +451,14 @@ const Navbar = () => {
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                 >
                   All Products
+                </Link>
+                
+                <Link
+                  to="/top-rated"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 flex items-center"
+                >
+                  <FiStar className="w-4 h-4 mr-2" />
+                  Top Rated
                 </Link>
                 
                 <Link

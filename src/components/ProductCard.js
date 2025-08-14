@@ -238,7 +238,7 @@ const ProductCard = ({ product, view = 'grid' }) => {
                   : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
               } transition-colors`}
             >
-              <FiHeart className="w-5 h-5" />
+              <FiHeart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
             </button>
             <button
               onClick={handleAddToCart}

@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
-import { collection, query, where, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
+import { useLocation, Link } from 'react-router-dom';
+import { collection, query, where, orderBy, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
-import { FiSearch, FiFilter, FiGrid, FiList, FiX, FiLoader } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiGrid, FiList, FiX, FiLoader, FiChevronLeft, FiChevronRight, FiStar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThreeDots } from 'react-loader-spinner';
 import toast from 'react-hot-toast';
 import { fetchPricingRules } from '../store/slices/pricingSlice';
+import '../styles/slider.css';
 
 const Products = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const [products, setProducts] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
+  const [highRatedProducts, setHighRatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [filters, setFilters] = useState({
     category: '',
     priceRange: '',
@@ -61,6 +65,9 @@ const Products = () => {
           image: data.image || data.images?.[0] || '',
           images: data.images || [],
           discount: data.discount ? parseFloat(data.discount) : null,
+          rating: parseFloat(data.rating) || 0,
+          totalRatings: parseInt(data.totalRatings) || 0,
+          createdAt: data.createdAt || new Date(),
           discounts: {
             sale: data.discounts?.sale ? {
               ...data.discounts.sale,
@@ -92,7 +99,24 @@ const Products = () => {
           category: data.category || 'Uncategorized'
         };
       });
+      
       setProducts(productsData);
+      
+      // Get new products (last 8 products)
+      const sortedByDate = [...productsData].sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      setNewProducts(sortedByDate.slice(0, 8));
+      
+      // Get high-rated products (rating >= 4.0)
+      const highRated = productsData
+        .filter(product => product.rating >= 4.0 && product.totalRatings > 0)
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 6);
+      setHighRatedProducts(highRated);
+      
       setLoading(false);
     }, (error) => {
       console.error('Error fetching products:', error);
@@ -177,6 +201,50 @@ const Products = () => {
 
   const filteredProducts = getFilteredProducts();
 
+  // Auto-slide functionality
+  const [isPaused, setIsPaused] = useState(false);
+  
+  // Get items per slide based on screen size
+  const getItemsPerSlide = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 1280) return 4; // xl
+      if (window.innerWidth >= 1024) return 3; // lg
+      if (window.innerWidth >= 640) return 2;  // sm
+      return 1; // mobile
+    }
+    return 4;
+  };
+
+  const [itemsPerSlide, setItemsPerSlide] = useState(getItemsPerSlide());
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerSlide(getItemsPerSlide());
+      setCurrentSlide(0); // Reset to first slide on resize
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  useEffect(() => {
+    if (newProducts.length > 0 && !isPaused) {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % Math.ceil(newProducts.length / itemsPerSlide));
+      }, 4000); // Change slide every 4 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [newProducts.length, isPaused, itemsPerSlide]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % Math.ceil(newProducts.length / itemsPerSlide));
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + Math.ceil(newProducts.length / itemsPerSlide)) % Math.ceil(newProducts.length / itemsPerSlide));
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -194,6 +262,208 @@ const Products = () => {
           Discover our collection of high-quality products
         </p>
       </div>
+
+      {/* New Products Slider */}
+      {newProducts.length > 0 && (
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">New Arrivals</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={prevSlide}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <FiChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <FiChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          
+          <div 
+            className="relative overflow-hidden"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <motion.div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{
+                transform: `translateX(-${currentSlide * 100}%)`,
+              }}
+            >
+              {Array.from({ length: Math.ceil(newProducts.length / itemsPerSlide) }).map((_, slideIndex) => (
+                <div key={slideIndex} className="w-full flex-shrink-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                    {newProducts
+                      .slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide)
+                      .map((product) => {
+                        // Calculate discounts for slider products (same logic as ProductCard)
+                        const calculateSliderDiscounts = () => {
+                          const now = new Date();
+                          const discounts = product.discounts || {};
+                          const activeDiscounts = [];
+                          let finalPrice = parseFloat(product.price) || 0;
+                          let totalDiscountPercentage = 0;
+                          let totalDiscountAmount = 0;
+
+                          // Check sale discount
+                          if (discounts.sale?.enabled) {
+                            const startDate = discounts.sale.startDate ? new Date(discounts.sale.startDate) : null;
+                            const endDate = discounts.sale.endDate ? new Date(discounts.sale.endDate) : null;
+
+                            if ((!startDate || now >= startDate) && (!endDate || now <= endDate)) {
+                              const discountValue = parseFloat(discounts.sale.discountValue) || 0;
+                              const discount = discounts.sale.discountType === 'percentage'
+                                ? finalPrice * (discountValue / 100)
+                                : discountValue;
+                              
+                              finalPrice = Math.max(0, finalPrice - discount);
+                              totalDiscountAmount += discount;
+                              totalDiscountPercentage += discountValue;
+                              
+                              activeDiscounts.push({
+                                type: 'sale',
+                                value: discountValue,
+                                discountType: discounts.sale.discountType,
+                                label: discounts.sale.discountType === 'percentage' 
+                                  ? `${discountValue}% Sale` 
+                                  : `$${discountValue.toFixed(2)} Off`
+                              });
+                            }
+                          }
+
+                          // Check simple discount percentage
+                          if (product.discount && !isNaN(parseFloat(product.discount))) {
+                            const discountValue = parseFloat(product.discount);
+                            const discount = finalPrice * (discountValue / 100);
+                            finalPrice = Math.max(0, finalPrice - discount);
+                            totalDiscountAmount += discount;
+                            totalDiscountPercentage += discountValue;
+                            
+                            activeDiscounts.push({
+                              type: 'sale',
+                              value: discountValue,
+                              discountType: 'percentage',
+                              label: `${discountValue}% OFF`
+                            });
+                          }
+
+                          return {
+                            finalPrice: parseFloat(finalPrice.toFixed(2)),
+                            originalPrice: parseFloat(product.price),
+                            activeDiscounts,
+                            hasDiscount: totalDiscountAmount > 0,
+                            totalDiscountPercentage: Math.round(totalDiscountPercentage)
+                          };
+                        };
+
+                        const { finalPrice, originalPrice, activeDiscounts, hasDiscount, totalDiscountPercentage } = calculateSliderDiscounts();
+
+                        return (
+                          <div key={product.id} className="product-card-hover bg-white rounded-lg shadow-md overflow-hidden">
+                            <Link to={`/product/${product.id}`} className="block">
+                              <div className="relative">
+                                <img
+                                  src={product.images?.[0] || product.image}
+                                  alt={product.name}
+                                  className="w-full h-48 object-cover transform hover:scale-105 transition-transform duration-300"
+                                />
+                                
+                                {/* Discount Tags */}
+                                {activeDiscounts.length > 0 && (
+                                  <div className="absolute top-2 left-2 flex flex-col gap-1">
+                                    {activeDiscounts.map((discount, index) => (
+                                      <motion.div
+                                        key={`${discount.type}-${index}`}
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded-full text-xs shadow-md"
+                                      >
+                                        <span>{discount.label}</span>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {hasDiscount && (
+                                  <span className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-medium shadow-md">
+                                    {totalDiscountPercentage}% OFF
+                                  </span>
+                                )}
+                                
+                                <div className="absolute bottom-2 left-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-2 py-1 rounded-md text-sm font-medium shadow-md">
+                                  New
+                                </div>
+                                
+                                {product.stock <= product.stockThreshold && (
+                                  <div className="absolute bottom-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-md text-xs font-medium">
+                                    Low Stock
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4">
+                                <h3 className="text-lg font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-1">
+                                  {product.name}
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                                  {product.description}
+                                </p>
+                                <div className="mt-4 flex items-center justify-between">
+                                  <div className="flex flex-col">
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="text-xl font-bold text-gray-900">
+                                        ${finalPrice.toFixed(2)}
+                                      </span>
+                                      {hasDiscount && (
+                                        <span className="text-sm text-gray-500 line-through">
+                                          ${originalPrice.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {product.category && (
+                                      <span className="text-xs text-gray-400 capitalize">
+                                        {product.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {product.rating > 0 && (
+                                    <div className="flex items-center bg-yellow-50 px-2 py-1 rounded-full">
+                                      <FiStar className="w-4 h-4 text-yellow-400 fill-current" />
+                                      <span className="ml-1 text-sm text-gray-600 font-medium">
+                                        {product.rating.toFixed(1)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Link>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+          
+          {/* Slide indicators */}
+          <div className="flex justify-center mt-6 space-x-2">
+            {Array.from({ length: Math.ceil(newProducts.length / itemsPerSlide) }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  currentSlide === index ? 'bg-indigo-600' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search and View Options */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -336,29 +606,99 @@ const Products = () => {
         )}
       </AnimatePresence>
 
-      {/* Products Grid/List */}
-      <div className={`grid gap-6 ${
-        view === 'grid' 
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-          : 'grid-cols-1'
-      }`}>
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            view={view}
-          />
-        ))}
-      </div>
+      {/* Main Content with Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main Products Section */}
+        <div className="flex-1">
+          {/* Products Grid/List */}
+          <div className={`grid gap-6 ${
+            view === 'grid' 
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+              : 'grid-cols-1'
+          }`}>
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                view={view}
+              />
+            ))}
+          </div>
 
-      {/* Empty State */}
-      {filteredProducts.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            No products found matching your criteria
-          </p>
+          {/* Empty State */}
+          {filteredProducts.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">
+                No products found matching your criteria
+              </p>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Sidebar - High Rated Products */}
+        {highRatedProducts.length > 0 && (
+          <div className="lg:w-80">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+              <div className="flex items-center mb-4">
+                <FiStar className="w-5 h-5 text-yellow-400 fill-current mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Top Rated Products</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {highRatedProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="flex-shrink-0">
+                      <img
+                        src={product.images?.[0] || product.image}
+                        alt={product.name}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 line-clamp-2">
+                        {product.name}
+                      </h4>
+                      <div className="flex items-center mt-1">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, index) => (
+                            <FiStar
+                              key={index}
+                              className={`w-3 h-3 ${
+                                index < Math.floor(product.rating)
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="ml-1 text-xs text-gray-500">
+                          {product.rating.toFixed(1)} ({product.totalRatings})
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mt-1">
+                        ${product.price.toFixed(2)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="mt-6">
+                <Link
+                  to="/top-rated"
+                  className="block w-full text-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  View All Top Rated
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

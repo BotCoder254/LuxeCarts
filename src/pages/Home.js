@@ -187,62 +187,19 @@ const Home = () => {
       </div>
 
       {/* Flash Sales Section */}
-      <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FlashSalesBanner />
+      <div className="py-12 bg-gradient-to-r from-red-50 to-pink-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FlashSalesBanner />
+        </div>
       </div>
 
       {/* Featured Products Section */}
-      <div className="py-16">
+      <div className="py-16 bg-white">
         <FeaturedProducts />
       </div>
 
       {/* Features Section */}
-      <div className="py-24 bg-gray-50 w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose LuxeCart?
-            </h2>
-            <p className="text-xl text-gray-600">
-              Experience shopping with confidence and convenience
-            </p>
-          </motion.div>
-
-          <div className="mt-20">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  className="relative group"
-                >
-                  <div className="bg-white rounded-lg p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                    <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-600 text-white mb-4">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600">{feature.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Categories Section */}
-      <div className="py-24 bg-white w-full">
+      <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -251,15 +208,58 @@ const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Shop by Category
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Choose LuxeCart?
             </h2>
-            <p className="text-xl text-gray-600">
-              Explore our wide range of categories
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+              Experience shopping with confidence and convenience
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="relative group"
+              >
+                <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Categories Section */}
+      <div className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Shop by Category
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+              Explore our wide range of premium categories
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category, index) => (
               <motion.div
                 key={category.name}
@@ -267,29 +267,34 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
+                className="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
               >
                 <Link
                   to={category.link}
                   className="block"
                   onClick={isPreview ? handlePreviewClick : undefined}
                 >
-                  <div className="aspect-w-16 aspect-h-9 sm:aspect-w-3 sm:aspect-h-2">
+                  <div className="relative h-64">
                     <img
                       src={category.image}
                       alt={category.name}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&w=400&h=300&fit=crop`;
+                      }}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">
+                  <div className="absolute inset-0 flex flex-col justify-end p-6">
+                    <h3 className="text-xl font-bold text-white mb-2 transform group-hover:translate-y-0 transition-transform">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-gray-200 mb-4">
+                    <p className="text-sm text-gray-200 mb-3 opacity-90">
                       {category.description}
                     </p>
-                    <span className="inline-flex items-center text-white text-sm font-medium">
-                      Shop Now <FiArrowRight className="ml-2" />
+                    <span className="inline-flex items-center text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full w-fit group-hover:bg-white/30 transition-colors">
+                      Shop Now <FiArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform" />
                     </span>
                   </div>
                 </Link>
@@ -300,30 +305,34 @@ const Home = () => {
       </div>
 
       {/* Product Co-Creation Section */}
-      <ProductCoCreation />
+      <div className="bg-gray-50">
+        <ProductCoCreation />
+      </div>
 
       {/* Verified Communities Section */}
-      <VerifiedCommunities />
+      <div className="bg-white">
+        <VerifiedCommunities />
+      </div>
 
       {/* Testimonials Section */}
-      <div className="py-24 bg-gray-50">
+      <div className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               What Our Customers Say
             </h2>
-            <p className="text-xl text-gray-600">
-              Don't just take our word for it
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+              Don't just take our word for it - hear from our satisfied customers
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.name}
@@ -331,25 +340,29 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+                className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 <div className="flex items-center mb-4">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="h-12 w-12 rounded-full object-cover mr-4"
+                    className="h-12 w-12 rounded-full object-cover mr-3 ring-2 ring-indigo-100"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonial.name)}&background=6366f1&color=fff`;
+                    }}
                   />
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900">
+                    <h4 className="text-base font-semibold text-gray-900">
                       {testimonial.name}
                     </h4>
                     <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
+                <p className="text-gray-600 mb-4 text-sm italic">"{testimonial.content}"</p>
                 <div className="flex">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <FiStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    <FiStar key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
               </motion.div>
@@ -359,12 +372,12 @@ const Home = () => {
       </div>
 
       {/* Blog Preview Section */}
-      <div className="py-16">
+      <div className="py-16 bg-white">
         <BlogPreview />
       </div>
 
-       {/* Exit Intent Popup */}
-       <ExitIntentPopup />
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white w-full">
@@ -483,4 +496,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;

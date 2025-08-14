@@ -47,7 +47,7 @@ const Favorites = () => {
           Your favorites list is empty
         </h2>
         <p className="text-gray-600 mb-8">
-          Start adding products you love to your favorites list
+          Start adding products you love to your favorites by clicking the heart icon on any product
         </p>
         <Link
           to="/products"
@@ -63,7 +63,7 @@ const Favorites = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Favorites</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Favorites</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>

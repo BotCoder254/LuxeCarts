@@ -111,124 +111,128 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-      <div className="py-6 w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 gap-6 w-full"
-        >
-          {/* Inventory Alerts Section */}
-          <div className="w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Inventory Alerts</h2>
-            <InventoryAlerts />
-          </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-8"
+      >
+        {/* Page Header */}
+        <div className="text-center lg:text-left">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+          <p className="text-gray-600">Welcome to your admin dashboard</p>
+        </div>
 
-          {/* Analytics Section */}
-          <div className="w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Analytics Overview</h2>
-            <AdminAnalytics 
-              orders={allOrders}
-              users={allUsers}
-              products={allProducts}
-            />
-          </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <DashboardCard
+            title="Total Products"
+            value={stats.products}
+            icon={<FiPackage />}
+            link="/admin/products"
+          />
+          <DashboardCard
+            title="Total Orders"
+            value={stats.orders}
+            icon={<FiShoppingBag />}
+            link="/admin/orders"
+          />
+          <DashboardCard
+            title="Total Users"
+            value={stats.users}
+            icon={<FiUsers />}
+            link="/admin/users"
+          />
+          <DashboardCard
+            title="Total Revenue"
+            value={`$${stats.revenue.toFixed(2)}`}
+            icon={<FiDollarSign />}
+            link="/admin/orders"
+          />
+        </div>
 
-          {/* Stats Cards */}
-          <div className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <DashboardCard
-                title="Total Products"
-                value={stats.products}
-                icon={<FiPackage />}
-                link="/admin/products"
-              />
-              <DashboardCard
-                title="Total Orders"
-                value={stats.orders}
-                icon={<FiShoppingBag />}
-                link="/admin/orders"
-              />
-              <DashboardCard
-                title="Total Users"
-                value={stats.users}
-                icon={<FiUsers />}
-                link="/admin/users"
-              />
-              <DashboardCard
-                title="Total Revenue"
-                value={`$${stats.revenue.toFixed(2)}`}
-                icon={<FiDollarSign />}
-                link="/admin/orders"
-              />
-            </div>
-          </div>
+        {/* Inventory Alerts Section */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">Inventory Alerts</h2>
+          <InventoryAlerts />
+        </div>
 
-          {/* Recent Orders */}
-          <div className="w-full bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Recent Orders</h2>
-            </div>
-            <div className="overflow-x-auto w-full">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Order ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
+        {/* Analytics Section */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">Analytics Overview</h2>
+          <AdminAnalytics 
+            orders={allOrders}
+            users={allUsers}
+            products={allProducts}
+          />
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800">Recent Orders</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                      <Link to={`/admin/orders/${order.id}`}>{order.id.slice(0, 8)}...</Link>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.shippingAddress?.name || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ${order.total.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                        'bg-yellow-100 text-yellow-800'}`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {moment(order.createdAt).format('MMM DD, YYYY')}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                        <Link to={`/admin/orders/${order.id}`}>{order.id.slice(0, 8)}...</Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.shippingAddress?.name || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                          'bg-yellow-100 text-yellow-800'}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {moment(order.createdAt).format('MMM DD, YYYY')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </AdminLayout>
   );
 };

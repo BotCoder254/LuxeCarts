@@ -48,6 +48,7 @@ import PickupLocations from './pages/admin/PickupLocations';
 import InsuranceManagement from './pages/admin/InsuranceManagement';
 import InvoiceCustomization from './pages/admin/InvoiceCustomization';
 import OrderModificationSettings from './pages/admin/OrderModificationSettings';
+import TopRated from './pages/TopRated';
 import Communities from './pages/admin/Communities';
 import ProductIdeas from './pages/admin/ProductIdeas';
 import CommunitiesPage from './pages/CommunitiesPage';
@@ -187,6 +188,7 @@ function App() {
 
           {/* User Routes */}
           <Route path="/products" element={<Products />} />
+          <Route path="/top-rated" element={<TopRated />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />

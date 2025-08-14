@@ -22,6 +22,8 @@ import toast from 'react-hot-toast';
 
 import ProductExitIntent from '../components/ProductExitIntent';
 
+import '../styles/slider.css';
+
 const ProductDetail = () => {
 
   const { id } = useParams();
@@ -720,7 +722,7 @@ const ProductDetail = () => {
 
                     <h3 className="text-sm font-medium text-gray-900 mb-4">Color</h3>
 
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-3">
 
                       {product.colors.map((color) => (
 
@@ -730,23 +732,48 @@ const ProductDetail = () => {
 
                           onClick={() => setSelectedColor(color)}
 
-                          className={`w-8 h-8 rounded-full border-2 ${
+                          className={`color-box w-16 h-10 rounded-lg border-2 flex items-center justify-center text-xs font-medium ${
 
                             selectedColor === color
 
-                              ? 'border-indigo-600'
+                              ? 'selected border-indigo-600 ring-2 ring-indigo-200'
 
-                              : 'border-gray-300'
+                              : 'border-gray-300 hover:border-gray-400'
 
                           }`}
 
-                          style={{ backgroundColor: color }}
+                          style={{ 
+                            backgroundColor: color.startsWith('#') ? color : '#f3f4f6',
+                            color: color.startsWith('#') ? 
+                              (color === '#FFFFFF' || color === '#ffffff' || color.toLowerCase() === 'white' ? '#000' : '#fff') : 
+                              '#374151'
+                          }}
 
-                        />
+                          title={color}
+
+                        >
+
+                          {!color.startsWith('#') && (
+
+                            <span className="capitalize">{color}</span>
+
+                          )}
+
+                        </button>
 
                       ))}
 
                     </div>
+
+                    {selectedColor && (
+
+                      <p className="mt-2 text-sm text-gray-600">
+
+                        Selected: <span className="font-medium capitalize">{selectedColor}</span>
+
+                      </p>
+
+                    )}
 
                   </div>
 
